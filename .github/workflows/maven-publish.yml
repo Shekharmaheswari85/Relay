@@ -1,8 +1,7 @@
 name: Publish Snapshot
 
 # Publishes the current -SNAPSHOT artifact to GitHub Packages whenever
-# a commit lands on main (e.g. after a PR is merged).
-# Skipped automatically when commits carry [skip ci] (release.sh bump commits).
+# a commit lands on main. Commits with [skip ci] are skipped automatically.
 
 on:
   push:
@@ -31,23 +30,20 @@ jobs:
           server-id: github
           settings-path: ${{ github.workspace }}
 
-      - name: Check version is a SNAPSHOT
+      - name: Read version
         id: version
         run: |
           VERSION=$(mvn help:evaluate -Dexpression=revision -q -DforceStdout)
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
           if [[ "$VERSION" == *"-SNAPSHOT" ]]; then
             echo "is_snapshot=true" >> "$GITHUB_OUTPUT"
+            echo "Publishing SNAPSHOT: $VERSION"
           else
             echo "is_snapshot=false" >> "$GITHUB_OUTPUT"
-            echo "Version '$VERSION' is not a SNAPSHOT — skipping publish."
+            echo "Version '$VERSION' is a release — skipping SNAPSHOT publish."
           fi
 
-      - name: Build
-        if: steps.version.outputs.is_snapshot == 'true'
-        run: mvn -B package -DskipTests -Dspotbugs.skip=true -Dpmd.skip=true
-
-      - name: Publish SNAPSHOT to GitHub Packages
+      - name: Build & publish SNAPSHOT to GitHub Packages
         if: steps.version.outputs.is_snapshot == 'true'
         run: |
           mvn -B deploy \
