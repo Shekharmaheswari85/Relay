@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-    SpotBugs exclusion filter for agentcore.
+    SpotBugs exclusion filter for Relay.
 
     Excludes:
       - Lombok-generated synthetic methods (builders, constructors, equals/hashCode)
@@ -23,10 +23,10 @@
         <Bug pattern="EI_EXPOSE_REP,EI_EXPOSE_REP2"/>
     </Match>
 
-    <!-- ── Test utilities (io.agentcore.test.*) ─────────────────────────────── -->
+    <!-- ── Test utilities (io.relay.test.*) ─────────────────────────────── -->
     <!-- In-memory stores intentionally hold mutable shared state for test use. -->
     <Match>
-        <Package name="io.agentcore.test"/>
+        <Package name="io.relay.test"/>
         <Bug pattern="EI_EXPOSE_REP,EI_EXPOSE_REP2,MS_EXPOSE_REP"/>
     </Match>
 
@@ -34,7 +34,7 @@
     <!-- Raw generic types in @Bean factory methods inside JpaStoreConfiguration
          are required by Spring's conditional bean registration API. -->
     <Match>
-        <Class name="io.agentcore.config.AgentCoreAutoConfiguration$JpaStoreConfiguration"/>
+        <Class name="io.relay.config.RelayAutoConfiguration$JpaStoreConfiguration"/>
         <Bug pattern="HE_EQUALS_USE_HASHCODE,BC_UNCONFIRMED_CAST_OF_RETURN_VALUE"/>
     </Match>
 
@@ -42,7 +42,7 @@
     <!-- Java records expose their fields by design; EI warnings are expected.
          All fields in these records are immutable (String / primitives). -->
     <Match>
-        <Class name="~io\.agentcore\.a2a\.(SseEvent|CreateSessionRequest|CreateSessionResponse|SendMessageRequest)"/>
+        <Class name="~io\.relay\.a2a\.(SseEvent|CreateSessionRequest|CreateSessionResponse|SendMessageRequest)"/>
         <Bug pattern="EI_EXPOSE_REP,EI_EXPOSE_REP2"/>
     </Match>
 
@@ -50,7 +50,7 @@
     <!-- These are transport/config models hydrated by frameworks (Jackson/Spring Boot).
          We intentionally allow mutable lists/maps for binding ergonomics. -->
     <Match>
-        <Class name="~io\.agentcore\.(dto|config|a2a)\..*"/>
+        <Class name="~io\.relay\.(dto|config|a2a)\..*"/>
         <Bug pattern="EI_EXPOSE_REP,EI_EXPOSE_REP2"/>
     </Match>
 
@@ -58,13 +58,13 @@
     <!-- SpotBugs flags constructor/setter assignment of Spring beans as EI_EXPOSE_REP2.
          For managed singleton collaborators this is expected and safe. -->
     <Match>
-        <Class name="~io\.agentcore\.(aspect|cache|checkpoint|config|lifecycle|observability|orchestrator|parser|prompt|session|store|tool|web)\..*"/>
+        <Class name="~io\.relay\.(aspect|cache|checkpoint|config|lifecycle|observability|orchestrator|parser|prompt|session|store|tool|web)\..*"/>
         <Bug pattern="EI_EXPOSE_REP2"/>
     </Match>
 
     <!-- ── Mutable execution context container ───────────────────────────────── -->
     <Match>
-        <Class name="io.agentcore.agent.AgentExecutionContext"/>
+        <Class name="io.relay.agent.AgentExecutionContext"/>
         <Bug pattern="EI_EXPOSE_REP,EI_EXPOSE_REP2"/>
     </Match>
 

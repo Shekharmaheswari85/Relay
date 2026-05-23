@@ -1,6 +1,6 @@
 <div align="center">
 
-# Agent Core
+# Relay
 
 **Production-ready, extensible foundation for building AI agents on Spring AI**
 
@@ -9,7 +9,7 @@
 [![Spring AI 1.0](https://img.shields.io/badge/Spring%20AI-1.0.0-6db33f)](https://spring.io/projects/spring-ai)
 [![License](https://img.shields.io/badge/License-private-lightgrey)](LICENSE)
 
-Agent Core is a Spring Boot library that gives you batteries-included scaffolding to build, run, and scale production AI agents — without writing the same boilerplate every time.
+Relay is a Spring Boot library that gives you batteries-included scaffolding to build, run, and scale production AI agents — without writing the same boilerplate every time.
 
 [Quick Start](#quick-start) · [Architecture](#architecture) · [Features](#features) · [Configuration](#configuration-reference) · [Extending](#extending-agent-core) · [Contributing](#contributing)
 
@@ -17,11 +17,11 @@ Agent Core is a Spring Boot library that gives you batteries-included scaffoldin
 
 ---
 
-## Why Agent Core?
+## Why Relay?
 
 Building an AI agent from scratch means wiring together LLM calls, session state, audit logs, memory, tool caching, rate limiting, circuit breakers, SSE streaming, and multi-agent coordination. That is weeks of infrastructure work before you write a single line of business logic.
 
-Agent Core gives you all of that — tested, observable, and extensible — as a set of focused Maven modules. You focus on what your agent *does*; Agent Core handles how it *runs*.
+Relay gives you all of that — tested, observable, and extensible — as a set of focused Maven modules. You focus on what your agent *does*; Relay handles how it *runs*.
 
 | Capability | What you get |
 |---|---|
@@ -38,16 +38,16 @@ Agent Core gives you all of that — tested, observable, and extensible — as a
 
 ## Modules
 
-Agent Core is structured as a multi-module Maven project. Import the BOM and pick exactly the modules you need.
+Relay is structured as a multi-module Maven project. Import the BOM and pick exactly the modules you need.
 
 | Module                                                     | Artifact ID              | What it contains                                                                        |
 |------------------------------------------------------------|--------------------------|-----------------------------------------------------------------------------------------|
-| [agentcore-bom](agentcore-bom/README.md)                   | `agentcore-bom`          | Bill of Materials — consistent version alignment across all modules                     |
-| [agentcore-core](agentcore-core/README.md)                 | `agentcore-core`         | Domain model (`BaseAgentSession`, `BaseAuditLog`), DTOs, session context, exceptions    |
-| [agentcore-cache](agentcore-cache/README.md)               | `agentcore-cache`        | Caffeine and Redis caching, tool-result TTL cache, deduplication                        |
-| [agentcore-store](agentcore-store/README.md)               | `agentcore-store`        | Store interfaces, JPA adapters, Spring Data repositories, session checkpoints           |
-| [agentcore-llm](agentcore-llm/README.md)                   | `agentcore-llm`          | ChatClient registry, prompt loading, SSE streaming, tool framework, observability       |
-| [agentcore-orchestrator](agentcore-orchestrator/README.md) | `agentcore-orchestrator` | A2A protocol, 8 advisors, agent routing, memory, RAG, reasoning strategies, auto-config |
+| [relay-bom](relay-bom/README.md)                   | `relay-bom`          | Bill of Materials — consistent version alignment across all modules                     |
+| [relay-core](relay-core/README.md)                 | `relay-core`         | Domain model (`BaseAgentSession`, `BaseAuditLog`), DTOs, session context, exceptions    |
+| [relay-cache](relay-cache/README.md)               | `relay-cache`        | Caffeine and Redis caching, tool-result TTL cache, deduplication                        |
+| [relay-store](relay-store/README.md)               | `relay-store`        | Store interfaces, JPA adapters, Spring Data repositories, session checkpoints           |
+| [relay-llm](relay-llm/README.md)                   | `relay-llm`          | ChatClient registry, prompt loading, SSE streaming, tool framework, observability       |
+| [relay-orchestrator](relay-orchestrator/README.md) | `relay-orchestrator` | A2A protocol, 8 advisors, agent routing, memory, RAG, reasoning strategies, auto-config |
 
 ### Dependency management (recommended)
 
@@ -55,8 +55,8 @@ Agent Core is structured as a multi-module Maven project. Import the BOM and pic
 <dependencyManagement>
     <dependencies>
         <dependency>
-            <groupId>io.agentcore</groupId>
-            <artifactId>agentcore-bom</artifactId>
+            <groupId>io.relay</groupId>
+            <artifactId>relay-bom</artifactId>
             <version>1.0.5</version>
             <type>pom</type>
             <scope>import</scope>
@@ -65,12 +65,12 @@ Agent Core is structured as a multi-module Maven project. Import the BOM and pic
 </dependencyManagement>
 ```
 
-`agentcore-orchestrator` transitively pulls in all other modules — the recommended single dependency for most teams:
+`relay-orchestrator` transitively pulls in all other modules — the recommended single dependency for most teams:
 
 ```xml
 <dependency>
-    <groupId>io.agentcore</groupId>
-    <artifactId>agentcore-orchestrator</artifactId>
+    <groupId>io.relay</groupId>
+    <artifactId>relay-orchestrator</artifactId>
 </dependency>
 ```
 
@@ -86,7 +86,7 @@ graph TD
 
     App --> ORCH
 
-    subgraph ORCH["agentcore-orchestrator"]
+    subgraph ORCH["relay-orchestrator"]
         direction TB
         CHAIN["Advisor Chain<br/><small>ConfirmationGate → CircuitBreaker → RateLimit<br/>Memory → RAG → Audit → Thinking → Fallback</small>"]
         A2A["A2A Protocol<br/><small>AgentClient · AgentClientRegistry<br/>StaticBearer · ApiKey · BasicAuth</small>"]
@@ -96,26 +96,26 @@ graph TD
         REASON["Reasoning Strategies<br/><small>LeastToMost · TreeOfThoughts<br/>SelfConsistency · Decomposed</small>"]
     end
 
-    subgraph LLM["agentcore-llm"]
+    subgraph LLM["relay-llm"]
         CHAT["ChatClientRegistry<br/><small>OpenAI · Anthropic · Gemini · Llama</small>"]
         TOOLS["Tool System<br/><small>@AgentTool · AutoDiscovery<br/>ToolResultCache (TTL)</small>"]
         OBS["Observability<br/><small>Micrometer metrics · MDC<br/>CommonTag MeterFilter</small>"]
         STREAM["SSE Streaming<br/><small>SseStreamHandler · PipelineEmitter<br/>ThinkingStreamParser</small>"]
     end
 
-    subgraph STORE["agentcore-store"]
+    subgraph STORE["relay-store"]
         SESS["AgentSessionStore"]
         AUDIT["AgentAuditLogStore"]
         TCACHE["ToolResultCacheStore"]
     end
 
-    subgraph CACHE["agentcore-cache"]
+    subgraph CACHE["relay-cache"]
         ICACHE["InMemoryAgentCache<br/><small>Caffeine · LRU/LFU/FIFO</small>"]
         RCACHE["RedisAgentCache"]
         DEDUP["ToolDedupCache"]
     end
 
-    subgraph CORE["agentcore-core"]
+    subgraph CORE["relay-core"]
         MODEL["BaseAgentSession<br/><small>14 columns · SessionStatus</small>"]
         CTX["SessionContextHolder<br/><small>ThreadLocal propagation</small>"]
         DTOS["DTOs · Exceptions<br/><small>ConfirmMutationRequest<br/>SendMessageRequestDTO</small>"]
@@ -170,24 +170,24 @@ sequenceDiagram
 ### Module layout
 
 ```
-io.agentcore
+io.relay
 │
-├── agentcore-core/
+├── relay-core/
 │   └── model/, session/, dto/, exception/
 │
-├── agentcore-cache/
+├── relay-cache/
 │   └── cache/  (AgentCache, InMemoryAgentCache, RedisAgentCache, ToolDedupCache, DefaultToolResultCache)
 │
-├── agentcore-store/
+├── relay-store/
 │   └── store/, repository/, checkpoint/
 │
-├── agentcore-llm/
+├── relay-llm/
 │   └── llm/, prompt/, stream/, tool/, aspect/, filter/, observability/, thread/
 │
-├── agentcore-orchestrator/
+├── relay-orchestrator/
 │   └── a2a/         (AgentClient, AgentClientRegistry, *A2AAuthContributor)
 │       advisor/     (8 advisors incl. ConfirmationGateAdvisor, RagAdvisor)
-│       config/      (AgentCoreAutoConfiguration, AgentCoreProperties)
+│       config/      (RelayAutoConfiguration, RelayProperties)
 │       executor/    (AgentExecutor, BaseAgentRuntimeService)
 │       memory/      (AgentMemoryManager, EntityMemoryStore, PersonaStore)
 │       rag/         (AgentRetriever, RagAdvisor, RetrievedDocument)
@@ -195,7 +195,7 @@ io.agentcore
 │       scheduler/   (BaseSessionExpiryScheduler, DefaultSessionExpiryScheduler)
 │       web/         (BaseAgentController)
 │
-└── agentcore-bom/   (version BOM, no Java sources)
+└── relay-bom/   (version BOM, no Java sources)
 ```
 
 ---
@@ -214,8 +214,8 @@ io.agentcore
 <dependencyManagement>
     <dependencies>
         <dependency>
-            <groupId>io.agentcore</groupId>
-            <artifactId>agentcore-bom</artifactId>
+            <groupId>io.relay</groupId>
+            <artifactId>relay-bom</artifactId>
             <version>1.0.5</version>
             <type>pom</type>
             <scope>import</scope>
@@ -225,8 +225,8 @@ io.agentcore
 
 <dependencies>
     <dependency>
-        <groupId>io.agentcore</groupId>
-        <artifactId>agentcore-orchestrator</artifactId>
+        <groupId>io.relay</groupId>
+        <artifactId>relay-orchestrator</artifactId>
     </dependency>
 
     <!-- LLM provider of your choice -->
@@ -299,7 +299,7 @@ public class MyAgentController
 }
 ```
 
-Agent Core autoconfigures everything else: cache, memory manager, advisor chain, session expiry, observability, and virtual thread executor.
+Relay autoconfigures everything else: cache, memory manager, advisor chain, session expiry, observability, and virtual thread executor.
 
 ---
 
@@ -342,7 +342,7 @@ Override by declaring your own `BaseSessionExpiryScheduler<S>` bean for custom l
 
 ### Memory System
 
-Agent Core provides a **5-tier memory hierarchy** that persists knowledge across sessions and users.
+Relay provides a **5-tier memory hierarchy** that persists knowledge across sessions and users.
 
 | Type        | Scope           | Use case                                          |
 |-------------|-----------------|---------------------------------------------------|
@@ -699,7 +699,7 @@ agent:
 
 ---
 
-## Extending Agent Core
+## Extending Relay
 
 ### RAG — connect any vector store
 
@@ -802,7 +802,7 @@ public class TokenBudgetAdvisor implements CallAdvisor {
 
 ## Test Utilities
 
-`agentcore-store` ships in-memory implementations of all store interfaces:
+`relay-store` ships in-memory implementations of all store interfaces:
 
 ```java
 @SpringBootTest
@@ -820,7 +820,7 @@ class MyAgentServiceTest {
 }
 ```
 
-`agentcore-llm` provides `MockChatModel` (returns pre-scripted responses in sequence) and `SseEventCaptor` for asserting on streamed events.
+`relay-llm` provides `MockChatModel` (returns pre-scripted responses in sequence) and `SseEventCaptor` for asserting on streamed events.
 
 ---
 
@@ -836,7 +836,7 @@ mvn verify
 mvn verify -Dspotbugs.skip=true -Dpmd.skip=true
 
 # Build a single module and its dependencies
-mvn verify -pl agentcore-llm --also-make
+mvn verify -pl relay-llm --also-make
 
 # Run static analysis standalone
 mvn spotbugs:check
@@ -854,7 +854,7 @@ Releases are fully automated via GitHub Actions. Go to **Actions → Release →
 - **Lombok** — use `@Data`, `@SuperBuilder`, `@RequiredArgsConstructor` consistently; never mix `@Builder` and `@SuperBuilder` in an inheritance hierarchy
 - **Javadoc** — all `public` interfaces and classes require full Javadoc
 - **Static analysis** — SpotBugs + PMD must pass before merging (`mvn verify`)
-- **Tests** — new features require unit tests using in-memory store utilities from `agentcore-store`
+- **Tests** — new features require unit tests using in-memory store utilities from `relay-store`
 
 Exclusion rules live in `spotbugs-exclude.xml` and `pmd-ruleset.xml`. Do not add `@SuppressWarnings` to production code to silence analysers.
 
@@ -862,6 +862,6 @@ Exclusion rules live in `spotbugs-exclude.xml` and `pmd-ruleset.xml`. Do not add
 
 ## License
 
-Agent Core is currently a private personal project.
+Relay is currently a private personal project.
 
 Copyright 2026 Shekhar Maheswari. All rights reserved.

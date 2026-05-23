@@ -40,7 +40,7 @@ body:
   - type: input
     id: version
     attributes:
-      label: Agent Core version
+      label: Relay version
       placeholder: "e.g. 1.0.3"
     validations:
       required: true

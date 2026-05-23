@@ -1,0 +1,2 @@
+io.relay.config.RelayAutoConfiguration
+io.relay.config.ChatClientAutoConfiguration
