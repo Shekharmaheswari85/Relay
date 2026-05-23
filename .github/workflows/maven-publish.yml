@@ -46,7 +46,8 @@ jobs:
       - name: Build & publish SNAPSHOT to GitHub Packages
         if: steps.version.outputs.is_snapshot == 'true'
         run: |
-          mvn -B deploy \
+          # flatten:flatten must run before deploy so ${revision} is resolved in the published POM
+          mvn -B flatten:flatten deploy \
             -DskipTests \
             -Dspotbugs.skip=true \
             -Dpmd.skip=true \

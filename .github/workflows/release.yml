@@ -96,7 +96,7 @@ jobs:
       # ── Publish artifact ─────────────────────────────────────────────────
       - name: Publish ${{ steps.ver.outputs.release }} to GitHub Packages
         run: |
-          mvn -B deploy \
+          mvn -B flatten:flatten deploy \
             -DskipTests \
             -DaltDeploymentRepository=github::https://maven.pkg.github.com/${{ github.repository }} \
             -s "$GITHUB_WORKSPACE/settings.xml"
