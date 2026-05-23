@@ -17,6 +17,8 @@ jobs:
   build:
     name: Build & Quality Gate
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
 
     steps:
       - name: Checkout
