@@ -6,7 +6,7 @@ body:
   - type: markdown
     attributes:
       value: |
-        Got an idea for Agent Core? Describe it below.
+        Got an idea for Relay? Describe it below.
 
   - type: textarea
     id: problem

@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <!--
-    PMD custom ruleset for agentcore.
+    PMD custom ruleset for relay.
 
     Starts from the standard category rulesets and excludes rules that produce
     unavoidable false positives in a Spring Boot framework library:
@@ -12,13 +12,13 @@
 
     Reference: https://docs.pmd-code.org/latest/pmd_userdocs_making_rulesets.html
 -->
-<ruleset name="agentcore-rules"
+<ruleset name="relay-rules"
          xmlns="http://pmd.sourceforge.net/ruleset/2.0.0"
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://pmd.sourceforge.net/ruleset/2.0.0
              https://pmd.sourceforge.io/ruleset_2_0_0.xsd">
 
-    <description>agentcore PMD ruleset</description>
+    <description>relay PMD ruleset</description>
 
     <!-- PMD 7 category defaults are too style-heavy for this framework project.
          CI should block only correctness/resource-safety bugs, not naming/style churn. -->

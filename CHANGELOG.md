@@ -1,6 +1,6 @@
 # Changelog
 
-All notable changes to Agent Core are documented here.
+All notable changes to Relay are documented here.
 
 Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 Versioning: [Semantic Versioning](https://semver.org/spec/v2.0.0.html)
@@ -28,7 +28,7 @@ Versioning: [Semantic Versioning](https://semver.org/spec/v2.0.0.html)
   response on denial. Completes the full round-trip: `confirmation_required` SSE event → UI prompt
   → `/confirm` → agent continuation.
 
-- **`ConfirmMutationRequest` DTO** — new DTO in `agentcore-core` describing the request body for
+- **`ConfirmMutationRequest` DTO** — new DTO in `relay-core` describing the request body for
   the `/confirm` endpoint.
 
 - **Concrete A2A auth implementations** — three `A2AAuthContributor` implementations ship with
@@ -38,7 +38,7 @@ Versioning: [Semantic Versioning](https://semver.org/spec/v2.0.0.html)
   - `BasicAuthA2AAuthContributor` — HTTP Basic credentials per agent, with `forAgents(Map<String, Credentials>)` factory
 
 - **Tool result cache TTL** — `agent.cache.tool-ttl` property added to
-  `AgentCoreProperties.CacheProperties`. When set, tool result entries use this dedicated `Duration`
+  `RelayProperties.CacheProperties`. When set, tool result entries use this dedicated `Duration`
   instead of the global `agent.cache.ttl`. `DefaultToolResultCache` accepts an optional `Duration`
   constructor argument wired from properties.
 
@@ -47,10 +47,10 @@ Versioning: [Semantic Versioning](https://semver.org/spec/v2.0.0.html)
   enabling per-environment / per-service filtering in dashboards. Scoped to `agent.*` metrics only.
   Javadoc includes Prometheus and DataDog setup instructions.
 
-- **`AgentCoreProperties.MetricsProperties`** — new nested properties class under `agent.metrics.*`
+- **`RelayProperties.MetricsProperties`** — new nested properties class under `agent.metrics.*`
   with `enabled` (default `true`) and `common-tags` (default empty map).
 
-- **`AgentCoreProperties.ExpiryProperties`** — new nested class under `agent.session.expiry.*`
+- **`RelayProperties.ExpiryProperties`** — new nested class under `agent.session.expiry.*`
   with `enabled`, `idle-hours`, and `check-interval-ms`.
 
 - **`agent.cache.tool-ttl`** — new property on `CacheProperties` (type `Duration`, default `null`).
@@ -58,13 +58,13 @@ Versioning: [Semantic Versioning](https://semver.org/spec/v2.0.0.html)
 ### Changed
 
 - `DefaultToolResultCache` — new two-argument constructor `(AgentCache, Duration toolTtl)`.
-  Existing no-arg-style wiring via `AgentCoreAutoConfiguration.toolResultCache()` now passes the
+  Existing no-arg-style wiring via `RelayAutoConfiguration.toolResultCache()` now passes the
   configured `toolTtl` (or `null` to preserve original default-TTL behaviour).
 
-- `AgentCoreAutoConfiguration.toolResultCache()` — now reads `agent.cache.tool-ttl` and passes it
+- `RelayAutoConfiguration.toolResultCache()` — now reads `agent.cache.tool-ttl` and passes it
   to `DefaultToolResultCache`.
 
-- `AgentCoreAutoConfiguration` — new `SessionExpiryConfiguration` nested class enables
+- `RelayAutoConfiguration` — new `SessionExpiryConfiguration` nested class enables
   `@EnableScheduling` conditionally (only when `agent.session.expiry.enabled=true` and JPA is
   present), avoiding interference with applications that manage their own scheduler.
 
@@ -84,7 +84,7 @@ Versioning: [Semantic Versioning](https://semver.org/spec/v2.0.0.html)
 
 ### Added
 
-- Initial release of Agent Core framework
+- Initial release of Relay framework
 - Production-ready Spring Boot 3.4 / Spring AI 1.0 scaffolding for AI agents
 - 5-tier memory system: entity facts, personas, workflow, knowledge, context
 - 8 Spring AI advisors: Memory, RateLimit, CircuitBreaker, ConfirmationGate, Fallback, Thinking, BaseAudit, RAG

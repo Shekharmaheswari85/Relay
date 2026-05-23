@@ -11,14 +11,14 @@
         <relativePath/>
     </parent>
 
-    <groupId>io.agentcore</groupId>
-    <artifactId>agentcore-parent</artifactId>
+    <groupId>io.relay</groupId>
+    <artifactId>relay-parent</artifactId>
     <version>${revision}</version>
     <packaging>pom</packaging>
-    <name>Agent Core :: Parent</name>
+    <name>Relay :: Parent</name>
     <description>Production-ready, extensible foundation for building AI agents on Spring AI</description>
 
-    <url>https://github.com/Shekharmaheswari85/Agent-Core</url>
+    <url>https://github.com/Shekharmaheswari85/Relay</url>
 
     <licenses>
         <license>
@@ -28,12 +28,12 @@
     </licenses>
 
     <modules>
-        <module>agentcore-bom</module>
-        <module>agentcore-core</module>
-        <module>agentcore-cache</module>
-        <module>agentcore-store</module>
-        <module>agentcore-llm</module>
-        <module>agentcore-orchestrator</module>
+        <module>relay-bom</module>
+        <module>relay-core</module>
+        <module>relay-cache</module>
+        <module>relay-store</module>
+        <module>relay-llm</module>
+        <module>relay-orchestrator</module>
     </modules>
 
     <properties>
@@ -65,28 +65,28 @@
 
             <!-- Internal modules — all share ${revision} -->
             <dependency>
-                <groupId>io.agentcore</groupId>
-                <artifactId>agentcore-core</artifactId>
+                <groupId>io.relay</groupId>
+                <artifactId>relay-core</artifactId>
                 <version>${revision}</version>
             </dependency>
             <dependency>
-                <groupId>io.agentcore</groupId>
-                <artifactId>agentcore-cache</artifactId>
+                <groupId>io.relay</groupId>
+                <artifactId>relay-cache</artifactId>
                 <version>${revision}</version>
             </dependency>
             <dependency>
-                <groupId>io.agentcore</groupId>
-                <artifactId>agentcore-store</artifactId>
+                <groupId>io.relay</groupId>
+                <artifactId>relay-store</artifactId>
                 <version>${revision}</version>
             </dependency>
             <dependency>
-                <groupId>io.agentcore</groupId>
-                <artifactId>agentcore-llm</artifactId>
+                <groupId>io.relay</groupId>
+                <artifactId>relay-llm</artifactId>
                 <version>${revision}</version>
             </dependency>
             <dependency>
-                <groupId>io.agentcore</groupId>
-                <artifactId>agentcore-orchestrator</artifactId>
+                <groupId>io.relay</groupId>
+                <artifactId>relay-orchestrator</artifactId>
                 <version>${revision}</version>
             </dependency>
         </dependencies>
@@ -243,7 +243,7 @@
         <repository>
             <id>github</id>
             <name>GitHub Packages</name>
-            <url>https://maven.pkg.github.com/Shekharmaheswari85/Agent-Core</url>
+            <url>https://maven.pkg.github.com/Shekharmaheswari85/Relay</url>
         </repository>
     </distributionManagement>
 
