@@ -38,17 +38,16 @@ Agent Core gives you all of that — tested, observable, and extensible — as a
 
 ## Modules
 
-Agent Core is structured as a multi-module Maven project. Pick only what you need, or pull them all via `agentcore-starter`.
+Agent Core is structured as a multi-module Maven project. Import the BOM and pick exactly the modules you need.
 
-| Module                                               | Artifact ID              | What it contains                                                                          |
-|------------------------------------------------------|--------------------------|-------------------------------------------------------------------------------------------|
-| [agentcore-bom](agentcore-bom/README.md)             | `agentcore-bom`          | Bill of Materials — consistent version alignment across all modules                       |
-| [agentcore-core](agentcore-core/README.md)           | `agentcore-core`         | Domain model (`BaseAgentSession`, `BaseAuditLog`), DTOs, session context, exceptions      |
-| [agentcore-cache](agentcore-cache/README.md)         | `agentcore-cache`        | Caffeine and Redis caching abstractions, tool-result deduplication cache                  |
-| [agentcore-store](agentcore-store/README.md)         | `agentcore-store`        | Store interfaces, JPA adapters, Spring Data repositories, session checkpoints             |
-| [agentcore-llm](agentcore-llm/README.md)             | `agentcore-llm`          | ChatClient registry, prompt loading, SSE streaming, tool framework, AOP interceptors      |
-| [agentcore-orchestrator](agentcore-orchestrator/README.md) | `agentcore-orchestrator` | A2A protocol, advisors, agent routing, memory, RAG, reasoning strategies, auto-config |
-| [agentcore-starter](agentcore-starter/README.md)     | `agentcore-starter`      | Convenience starter — pulls in all modules with a single dependency                       |
+| Module                                                     | Artifact ID              | What it contains                                                                          |
+|------------------------------------------------------------|--------------------------|-------------------------------------------------------------------------------------------|
+| [agentcore-bom](agentcore-bom/README.md)                   | `agentcore-bom`          | Bill of Materials — consistent version alignment across all modules                       |
+| [agentcore-core](agentcore-core/README.md)                 | `agentcore-core`         | Domain model (`BaseAgentSession`, `BaseAuditLog`), DTOs, session context, exceptions      |
+| [agentcore-cache](agentcore-cache/README.md)               | `agentcore-cache`        | Caffeine and Redis caching abstractions, tool-result deduplication cache                  |
+| [agentcore-store](agentcore-store/README.md)               | `agentcore-store`        | Store interfaces, JPA adapters, Spring Data repositories, session checkpoints             |
+| [agentcore-llm](agentcore-llm/README.md)                   | `agentcore-llm`          | ChatClient registry, prompt loading, SSE streaming, tool framework, AOP interceptors      |
+| [agentcore-orchestrator](agentcore-orchestrator/README.md) | `agentcore-orchestrator` | A2A protocol, advisors, agent routing, memory, RAG, reasoning strategies, auto-config    |
 
 ### Dependency management (recommended)
 
@@ -68,12 +67,14 @@ Import the BOM to align all module versions automatically:
 </dependencyManagement>
 ```
 
-### Full stack (everything)
+### Full stack (recommended starting point)
+
+`agentcore-orchestrator` transitively pulls in all other modules:
 
 ```xml
 <dependency>
     <groupId>io.agentcore</groupId>
-    <artifactId>agentcore-starter</artifactId>
+    <artifactId>agentcore-orchestrator</artifactId>
 </dependency>
 ```
 
@@ -139,7 +140,7 @@ Import the BOM to align all module versions automatically:
 <dependencies>
     <dependency>
         <groupId>io.agentcore</groupId>
-        <artifactId>agentcore-starter</artifactId>
+        <artifactId>agentcore-orchestrator</artifactId>
     </dependency>
 
     <!-- LLM provider of your choice -->
@@ -308,8 +309,7 @@ io.agentcore
 │       pipeline/, rag/, reasoning/, router/, scheduler/,
 │       session/TenantResolver, summary/, web/
 │
-├── agentcore-bom/            (version BOM, no Java sources)
-└── agentcore-starter/        (pulls all modules above)
+└── agentcore-bom/            (version BOM, no Java sources)
 ```
 
 ---

@@ -42,11 +42,6 @@
                 <artifactId>agentcore-orchestrator</artifactId>
                 <version>${revision}</version>
             </dependency>
-            <dependency>
-                <groupId>io.agentcore</groupId>
-                <artifactId>agentcore-starter</artifactId>
-                <version>${revision}</version>
-            </dependency>
         </dependencies>
     </dependencyManagement>
 </project>

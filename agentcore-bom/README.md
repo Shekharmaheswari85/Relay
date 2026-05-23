@@ -45,6 +45,4 @@ After importing the BOM, declare Agent Core modules without versions:
 | `agentcore-store`        | Persistence, repositories             |
 | `agentcore-llm`          | LLM integration, tools, streaming     |
 | `agentcore-orchestrator` | Advisors, A2A, auto-configuration     |
-| `agentcore-starter`      | All-in-one starter                    |
-
 See the [root README](../README.md) for full documentation.

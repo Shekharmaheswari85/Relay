@@ -34,7 +34,6 @@
         <module>agentcore-store</module>
         <module>agentcore-llm</module>
         <module>agentcore-orchestrator</module>
-        <module>agentcore-starter</module>
     </modules>
 
     <properties>
