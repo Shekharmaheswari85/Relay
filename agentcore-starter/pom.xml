@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>io.agentcore</groupId>
+        <artifactId>agentcore-parent</artifactId>
+        <version>${revision}</version>
+    </parent>
+
+    <!--
+        Backward-compatible shim: artifactId stays "agentcore" so existing consumers
+        that declare <artifactId>agentcore</artifactId> continue to work unchanged.
+        Simply pulls in all five feature modules as compile dependencies.
+    -->
+    <artifactId>agentcore</artifactId>
+    <name>Agent Core :: Starter</name>
+    <description>Convenience starter — pulls in all Agent Core modules. Replaces the old monolithic agentcore jar.</description>
+
+    <dependencies>
+        <dependency>
+            <groupId>io.agentcore</groupId>
+            <artifactId>agentcore-core</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.agentcore</groupId>
+            <artifactId>agentcore-cache</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.agentcore</groupId>
+            <artifactId>agentcore-store</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.agentcore</groupId>
+            <artifactId>agentcore-llm</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.agentcore</groupId>
+            <artifactId>agentcore-orchestrator</artifactId>
+        </dependency>
+    </dependencies>
+</project>
