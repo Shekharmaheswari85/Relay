@@ -119,7 +119,7 @@ public class RedisAgentCache implements AgentCache {
         try {
             String fullKey = Objects.requireNonNull(prefixed(key), "Redis key must not be null");
             Boolean deleted = redisTemplate.delete(fullKey);
-            if (deleted.equals(Boolean.TRUE)) {
+            if (Boolean.TRUE.equals(deleted)) {
                 evictions.incrementAndGet();
             }
         } catch (Exception e) {

@@ -145,30 +145,49 @@ public class SseStreamHandler {
             return -1;
         }
         for (int i = 0; i < buffer.length(); i++) {
-            char c = buffer.charAt(i);
-            if (c == '\n') {
+            int b = indexedBoundary(buffer, i);
+            if (b >= 0) {
+                return b;
+            }
+        }
+        return overflowBoundary(buffer);
+    }
+
+    private int indexedBoundary(final StringBuilder buffer, final int i) {
+        char c = buffer.charAt(i);
+        if (c == '\n') {
+            return i;
+        }
+        if (isSentenceEnd(c)) {
+            if (i == buffer.length() - 1) {
+                return -1;
+            }
+            if (!isSkippedBoundary(buffer, i, c)) {
                 return i;
             }
-            if (c == '.' || c == '!' || c == '?') {
-                if (i == buffer.length() - 1) {
-                    return -1;
-                }
-                boolean shouldSkipBoundary =
-                        isLikelyMarkdownTableLine(buffer, i) || (c == '.' && isLikelyAbbreviationBoundary(buffer, i));
-                if (!shouldSkipBoundary) {
-                    return i;
-                }
-            }
-        }
-        if (buffer.length() >= STREAM_EMIT_BUFFER_THRESHOLD) {
-            for (int i = buffer.length() - 1; i >= 0; i--) {
-                if (Character.isWhitespace(buffer.charAt(i))) {
-                    return i;
-                }
-            }
-            return STREAM_EMIT_BUFFER_THRESHOLD - 1;
         }
         return -1;
+    }
+
+    private boolean isSentenceEnd(final char c) {
+        return c == '.' || c == '!' || c == '?';
+    }
+
+    private boolean isSkippedBoundary(final StringBuilder buffer, final int i, final char c) {
+        return isLikelyMarkdownTableLine(buffer, i)
+                || (c == '.' && isLikelyAbbreviationBoundary(buffer, i));
+    }
+
+    private int overflowBoundary(final StringBuilder buffer) {
+        if (buffer.length() < STREAM_EMIT_BUFFER_THRESHOLD) {
+            return -1;
+        }
+        for (int i = buffer.length() - 1; i >= 0; i--) {
+            if (Character.isWhitespace(buffer.charAt(i))) {
+                return i;
+            }
+        }
+        return STREAM_EMIT_BUFFER_THRESHOLD - 1;
     }
 
     private boolean isLikelyMarkdownTableLine(final StringBuilder buffer, final int cursorIndex) {

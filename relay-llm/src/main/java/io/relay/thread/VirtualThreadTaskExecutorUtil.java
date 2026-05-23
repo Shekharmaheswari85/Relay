@@ -120,7 +120,7 @@ public final class VirtualThreadTaskExecutorUtil {
     }
 
     /**
-     * Clears the stored executor reference, restoring the fallback behaviour of
+     * Clears the stored executor reference, restoring the fallback behavior of
      * {@link #getTaskExecutor()} and {@link #executeAsync}.
      *
      * <p>Call this in {@code @AfterEach} test teardown to prevent executor state
