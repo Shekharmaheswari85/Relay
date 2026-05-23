@@ -102,12 +102,12 @@ jobs:
       - name: Publish ${{ steps.ver.outputs.release }} to GitHub Packages
         if: ${{ inputs.skip_publish != true }}
         run: |
-          mvn -B flatten:flatten deploy \
+          mvn -B deploy \
             -DskipTests \
             -DaltDeploymentRepository=github::https://maven.pkg.github.com/${{ github.repository }} \
             -s "$GITHUB_WORKSPACE/settings.xml"
         env:
-          GITHUB_TOKEN: ${{ github.token }}
+          GITHUB_TOKEN: ${{ secrets.GH_PACKAGES_TOKEN || github.token }}
 
       - name: Skip publish (artifact already published)
         if: ${{ inputs.skip_publish == true }}
