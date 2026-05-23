@@ -46,12 +46,13 @@ jobs:
       - name: Build & publish SNAPSHOT to GitHub Packages
         if: steps.version.outputs.is_snapshot == 'true'
         run: |
-          # flatten:flatten must run before deploy so ${revision} is resolved in the published POM
-          mvn -B flatten:flatten deploy \
+          mvn -B deploy \
             -DskipTests \
             -Dspotbugs.skip=true \
             -Dpmd.skip=true \
             -DaltDeploymentRepository=github::https://maven.pkg.github.com/${{ github.repository }} \
             -s "$GITHUB_WORKSPACE/settings.xml"
         env:
-          GITHUB_TOKEN: ${{ github.token }}
+          # Use GH_PACKAGES_TOKEN (PAT with write:packages) if set, else fall back to GITHUB_TOKEN.
+          # If seeing 401s, go to the package settings page → Manage Actions access → grant Agent-Core Write.
+          GITHUB_TOKEN: ${{ secrets.GH_PACKAGES_TOKEN || github.token }}
