@@ -1,0 +1,98 @@
+/*
+ * Copyright 2024-2025 the original authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      https://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package io.agentcore.llm;
+
+/**
+ * Classifies LLM models into two cost-performance tiers so that agents can route
+ * requests to the most appropriate (and cost-effective) model automatically.
+ *
+ * <p>The tier is the bridge between agent logic and the LLM configuration:
+ * each tier maps to a distinct {@link LlmModelConfig} entry in
+ * {@link io.agentcore.config.AgentLlmProperties} ({@code reasoning-model} and
+ * {@code utility-model} respectively). At runtime, {@link ChatClientRegistry}
+ * resolves the tier to a pre-built {@link org.springframework.ai.chat.client.ChatClient}.
+ *
+ * <h3>Routing example</h3>
+ * <pre>{@code
+ * @Autowired ChatClientRegistry registry;
+ *
+ * public String summarise(String text) {
+ *     return registry.getClientForTier(ModelTier.UTILITY)
+ *             .prompt()
+ *             .user("Summarise: " + text)
+ *             .call()
+ *             .content();
+ * }
+ *
+ * public AnalysisResult analyse(String data) {
+ *     return registry.getClientForTier(ModelTier.REASONING)
+ *             .prompt()
+ *             .user("Analyse: " + data)
+ *             .call()
+ *             .entity(AnalysisResult.class);
+ * }
+ * }</pre>
+ *
+ * <h3>YAML configuration</h3>
+ * <pre>{@code
+ * agent:
+ *   llm:
+ *     reasoning-model:
+ *       provider: openai
+ *       model: gpt-4o
+ *       version: "2025-04-14"
+ *       api-version: "2024-02-01"
+ *     utility-model:
+ *       provider: openai
+ *       model: gpt-4o-mini
+ *       version: "2024-07-18"
+ *       api-version: "2024-02-01"
+ * }</pre>
+ *
+ * <p>When no {@code utility-model} is configured, {@link ChatClientRegistry#getUtilityClient()}
+ * falls back to the reasoning client so that agents function correctly with a single model.
+ *
+ * @see ChatClientRegistry
+ * @see LlmModelConfig
+ * @see io.agentcore.config.AgentLlmProperties
+ */
+public enum ModelTier {
+
+    /**
+     * High-capability tier intended for tasks that require multi-step reasoning,
+     * complex decision-making, code generation, or nuanced instruction-following.
+     *
+     * <p>Typical models: GPT-4o, Claude Sonnet, Gemini 2.5 Pro. These models are
+     * more expensive per token and should be reserved for work where accuracy and
+     * depth genuinely benefit from the extra capability.
+     *
+     * <p>Configured via {@code agent.llm.reasoning-model} in {@code application.yml}.
+     */
+    REASONING,
+
+    /**
+     * Cost-effective tier intended for tasks that are structurally simple: extraction,
+     * reformatting, short summarisation, classification, or filling structured templates.
+     *
+     * <p>Typical models: GPT-4o-mini, Claude Haiku, Gemini Flash. These models are
+     * significantly cheaper per token and respond faster, making them suitable for
+     * high-volume or latency-sensitive operations.
+     *
+     * <p>Configured via {@code agent.llm.utility-model} in {@code application.yml}.
+     * Falls back to {@link #REASONING} if no utility model is configured.
+     */
+    UTILITY
+}

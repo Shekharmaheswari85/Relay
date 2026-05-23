@@ -1,0 +1,3 @@
+io.agentcore.config.AgentCoreAutoConfiguration
+io.agentcore.config.ChatClientAutoConfiguration
+io.agentcore.tool.AutoDiscoveryToolConfig
