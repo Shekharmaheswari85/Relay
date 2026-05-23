@@ -149,11 +149,11 @@ public class ThinkingAdvisor implements CallAdvisor {
         try {
             var instructions = request.prompt().getInstructions();
             int turnCount = (int) instructions.stream()
-                    .filter(m -> m instanceof UserMessage)
+                    .filter(UserMessage.class::isInstance)
                     .count();
 
             String userText = instructions.stream()
-                    .filter(m -> m instanceof UserMessage)
+                    .filter(UserMessage.class::isInstance)
                     .map(m -> ((UserMessage) m).getText())
                     .findFirst()
                     .orElse("");

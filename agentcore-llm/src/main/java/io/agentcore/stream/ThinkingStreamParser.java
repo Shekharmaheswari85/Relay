@@ -67,11 +67,10 @@ public class ThinkingStreamParser {
      * System prompt instruction to prepend when enabling chain-of-thought thinking.
      * Add this to the beginning of your agent's system prompt.
      */
-    public static final String THINKING_INSTRUCTION =
-            "Before answering, enclose your step-by-step reasoning inside <think>...</think> tags. "
-            + "Think through: what the user is asking, what context you have, "
-            + "and the best way to respond. "
-            + "Your final answer to the user goes after the closing </think> tag.\n\n";
+    public static final String THINKING_INSTRUCTION = """
+            Before answering, enclose your step-by-step reasoning inside <think>...</think> tags. Think through: what the user is asking, what context you have, and the best way to respond. Your final answer to the user goes after the closing </think> tag.
+
+            """;
 
     private static final String OPEN_TAG = "<think>";
     private static final String CLOSE_TAG = "</think>";
@@ -126,13 +125,13 @@ public class ThinkingStreamParser {
      */
     public void flush(final PipelineEmitter emitter) {
         // Flush any partial tag buffer as answer text (tag never closed)
-        if (tagBuffer.length() > 0) {
+        if (!tagBuffer.isEmpty()) {
             String pending = tagBuffer.toString();
             tagBuffer.setLength(0);
             feedToAnswer(pending, emitter);
         }
         // Flush remaining answer buffer
-        if (answerBuffer.length() > 0) {
+        if (!answerBuffer.isEmpty()) {
             emitter.sendMessage(answerBuffer.toString());
             answerBuffer.setLength(0);
         }

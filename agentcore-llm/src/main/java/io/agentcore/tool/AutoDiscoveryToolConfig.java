@@ -17,7 +17,7 @@ import java.util.stream.Collectors;
 
 import org.springframework.ai.tool.ToolCallbackProvider;
 import org.springframework.ai.tool.method.MethodToolCallbackProvider;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
@@ -76,11 +76,15 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class AutoDiscoveryToolConfig {
 
-    @Autowired
-    private ApplicationContext applicationContext;
+    private final ApplicationContext applicationContext;
+    private final BaseMcpCallInterceptor mcpCallInterceptor;
 
-    @Autowired(required = false)
-    private BaseMcpCallInterceptor mcpCallInterceptor;
+    public AutoDiscoveryToolConfig(
+            final ApplicationContext applicationContext,
+            final ObjectProvider<BaseMcpCallInterceptor> mcpCallInterceptorProvider) {
+        this.applicationContext = applicationContext;
+        this.mcpCallInterceptor = mcpCallInterceptorProvider.getIfAvailable();
+    }
 
     /**
      * Builds and returns a {@link ToolCallbackProvider} backed by every

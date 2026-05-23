@@ -294,6 +294,11 @@ public class ToolProgressPublisher {
             final String status,
             final String message,
             final Long durationMs) {
+        /*
+         * Intentionally empty in the default implementation.
+         * This class is designed to be subclassed when persistence is needed
+         * (database, audit log, metrics sink, etc.).
+         */
     }
 
     /**

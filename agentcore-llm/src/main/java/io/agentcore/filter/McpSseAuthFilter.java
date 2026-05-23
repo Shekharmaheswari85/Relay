@@ -7,24 +7,11 @@
  */
 package io.agentcore.filter;
 
-import java.io.IOException;
-import java.util.Objects;
-
-import jakarta.servlet.Filter;
-import jakarta.servlet.FilterChain;
-import jakarta.servlet.ServletException;
-import jakarta.servlet.ServletRequest;
-import jakarta.servlet.ServletResponse;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
-
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
-
-import lombok.extern.slf4j.Slf4j;
 
 /**
  * Auto-configured servlet {@link Filter} that guards all {@code /mcp/**} requests
@@ -70,8 +57,7 @@ import lombok.extern.slf4j.Slf4j;
 @ConditionalOnWebApplication(type = ConditionalOnWebApplication.Type.SERVLET)
 @ConditionalOnProperty(prefix = "agent.mcp.sse", name = "enabled", havingValue = "true", matchIfMissing = true)
 @Order(McpSseAuthFilter.FILTER_ORDER)
-@Slf4j
-public class McpSseAuthFilter implements Filter {
+public class McpSseAuthFilter extends BaseMcpSseAuthFilter {
 
     /**
      * Filter order that ensures this filter runs early in the chain, rejecting
@@ -88,61 +74,18 @@ public class McpSseAuthFilter implements Filter {
     @Value("${agent.mcp.sse.header-name:X-MCP-Secret}")
     private String headerName;
 
-    @Value("${agent.mcp.sse.enabled:true}")
-    private boolean enabled;
-
-    /**
-     * Applies the shared-secret check to each incoming request.
-     *
-     * <p>Requests to paths outside the configured prefix are forwarded immediately. For
-     * guarded paths, the request is forwarded when the filter is disabled, no secret is
-     * configured, or the {@code agent.mcp.sse.header-name} header value equals the
-     * configured secret. All other requests are rejected with {@code 401 Unauthorized}
-     * without invoking the rest of the chain.
-     *
-     * @param request  the incoming servlet request
-     * @param response the servlet response
-     * @param chain    the downstream filter chain
-     * @throws IOException      if an I/O error occurs during response writing
-     * @throws ServletException if a servlet error occurs
-     */
     @Override
-    public void doFilter(
-            final ServletRequest request,
-            final ServletResponse response,
-            final FilterChain chain) throws IOException, ServletException {
+    protected String getSharedSecret() {
+        return sharedSecret;
+    }
 
-        if (!enabled) {
-            chain.doFilter(request, response);
-            return;
-        }
+    @Override
+    protected String getPathPrefix() {
+        return pathPrefix;
+    }
 
-        HttpServletRequest httpRequest = (HttpServletRequest) request;
-        HttpServletResponse httpResponse = (HttpServletResponse) response;
-
-        String path = httpRequest.getRequestURI();
-        if (!path.startsWith(pathPrefix)) {
-            chain.doFilter(request, response);
-            return;
-        }
-
-        boolean secretConfigured = sharedSecret != null && !sharedSecret.isBlank();
-        if (!secretConfigured) {
-            // No secret configured — fully public
-            chain.doFilter(request, response);
-            return;
-        }
-
-        // Secret configured — enforce it
-        String provided = httpRequest.getHeader(
-                Objects.requireNonNull(headerName, "Header name must not be null"));
-        if (sharedSecret.equals(provided)) {
-            log.debug("MCP auth accepted for path={}", path);
-            chain.doFilter(request, response);
-            return;
-        }
-
-        log.warn("MCP auth REJECTED: path={} — invalid or missing {} header", path, headerName);
-        httpResponse.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Unauthorized");
+    @Override
+    protected String getSecretHeader() {
+        return headerName;
     }
 }
