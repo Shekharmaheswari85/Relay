@@ -1,17 +1,9 @@
 /*
- * Copyright 2024-2025 the original authors.
+ * Copyright 2026 Shekhar Maheswari.
+ * All rights reserved.
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      https://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * This source code is private and proprietary until an explicit open-source
+ * license is published with this project.
  */
 package io.agentcore.config;
 
@@ -37,7 +29,7 @@ import lombok.Data;
  * <pre>{@code
  * agent:
  *   llm:
- *     gateway-base-url: https://wmtllmgateway.walmart.com
+ *     gateway-base-url: https://api.openai.com
  *     api-key: ${LLM_API_KEY}
  *     default-provider: openai
  *     temperature: 0.1
@@ -60,7 +52,8 @@ import lombok.Data;
  *       onboarding-market: prompts/onboarding-summary.txt
  *     ssl:
  *       trust-all: false
- *       ca-path: ${WMT_CA_PATH:}
+ *       allow-insecure-trust-all: false
+ *       ca-path: ${CA_BUNDLE_PATH:}
  *     audit:
  *       user-type: NO_END_USER
  *       user-name: agent_system
@@ -228,10 +221,18 @@ public class AgentLlmProperties {
 
         /**
          * When {@code true}, disables all certificate validation.
-         * Use only in local development environments — never in production.
+         * Requires {@link #allowInsecureTrustAll} to also be {@code true}.
+         * Use only in local development environments.
          * Default: {@code false}.
          */
         private boolean trustAll = false;
+
+        /**
+         * Explicit acknowledgement that insecure trust-all TLS mode is intentional.
+         * This second switch prevents accidental enablement from a copied config file.
+         * Default: {@code false}.
+         */
+        private boolean allowInsecureTrustAll = false;
 
         /**
          * Classpath or filesystem path to a custom CA certificate bundle ({@code .pem} or

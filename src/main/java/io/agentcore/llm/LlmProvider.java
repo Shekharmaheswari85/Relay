@@ -1,17 +1,9 @@
 /*
- * Copyright 2024-2025 the original authors.
+ * Copyright 2026 Shekhar Maheswari.
+ * All rights reserved.
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      https://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * This source code is private and proprietary until an explicit open-source
+ * license is published with this project.
  */
 package io.agentcore.llm;
 
@@ -24,8 +16,7 @@ import org.springframework.util.MultiValueMap;
 import lombok.Getter;
 
 /**
- * Enumerates the LLM providers supported by the agent framework and, specifically,
- * the Walmart LLM Gateway.
+ * Enumerates the LLM providers supported by the agent framework.
  *
  * <p>Each constant encapsulates two provider-specific concerns:
  * <ol>
@@ -76,7 +67,7 @@ import lombok.Getter;
 @Getter
 public enum LlmProvider {
     /**
-     * OpenAI GPT models accessed through the Walmart LLM Gateway.
+     * OpenAI GPT models accessed through an OpenAI-compatible gateway.
      * Produces OpenAI-style paths: {@code /openai/deployments/{model}@{version}/chat/completions}.
      * Auth header: {@code api-key}.
      */
@@ -88,7 +79,7 @@ public enum LlmProvider {
     },
 
     /**
-     * Meta Llama open-source models accessed through the Walmart LLM Gateway.
+     * Meta Llama open-source models accessed through an OpenAI-compatible gateway.
      * Uses the same OpenAI-compatible path structure as {@link #OPENAI}.
      * Auth header: {@code api-key}.
      */
@@ -100,7 +91,7 @@ public enum LlmProvider {
     },
 
     /**
-     * Google Gemma open-source models accessed through the Walmart LLM Gateway.
+     * Google Gemma open-source models accessed through an OpenAI-compatible gateway.
      * Uses the same OpenAI-compatible path structure as {@link #OPENAI}.
      * Auth header: {@code api-key}.
      */

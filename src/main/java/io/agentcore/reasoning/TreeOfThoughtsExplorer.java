@@ -1,17 +1,9 @@
 /*
- * Copyright 2024-2025 the original authors.
+ * Copyright 2026 Shekhar Maheswari.
+ * All rights reserved.
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      https://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * This source code is private and proprietary until an explicit open-source
+ * license is published with this project.
  */
 package io.agentcore.reasoning;
 
@@ -20,8 +12,11 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -254,29 +249,38 @@ public class TreeOfThoughtsExplorer {
             final int depth) {
 
         CopyOnWriteArrayList<ScoredThought> candidates = new CopyOnWriteArrayList<>();
-        CountDownLatch latch = new CountDownLatch(beam.size());
 
-        for (ScoredThought parent : beam) {
-            Thread.ofVirtual().start(() -> {
-                try {
+        try (var executor = Executors.newVirtualThreadPerTaskExecutor()) {
+            List<Future<?>> futures = new ArrayList<>();
+            for (ScoredThought parent : beam) {
+                futures.add(executor.submit(() -> {
                     List<String> thoughts = generateThoughts(problem, parent.thought());
                     List<ScoredThought> scored = scoreThoughtsInParallel(problem, thoughts, parent.thought());
                     candidates.addAll(scored);
-                } catch (Exception ex) {
-                    log.debug("TreeOfThoughtsExplorer: expansion failed at depth={}: {}", depth, ex.getMessage());
-                } finally {
-                    latch.countDown();
-                }
-            });
-        }
-
-        try {
-            if (!latch.await(timeoutSeconds, TimeUnit.SECONDS)) {
-                log.warn("TreeOfThoughtsExplorer: expansion timed out at depth={}", depth);
+                }));
             }
-        } catch (InterruptedException ex) {
-            Thread.currentThread().interrupt();
-            log.warn("TreeOfThoughtsExplorer: interrupted during expansion at depth={}", depth);
+
+            long endTime = System.currentTimeMillis() + (timeoutSeconds * 1000L);
+            for (var future : futures) {
+                long remaining = endTime - System.currentTimeMillis();
+                try {
+                    if (remaining > 0) {
+                        future.get(remaining, TimeUnit.MILLISECONDS);
+                    } else {
+                        future.cancel(true);
+                    }
+                } catch (TimeoutException ex) {
+                    log.warn("TreeOfThoughtsExplorer: expansion timed out at depth={}", depth);
+                    future.cancel(true);
+                } catch (InterruptedException ex) {
+                    Thread.currentThread().interrupt();
+                    log.warn("TreeOfThoughtsExplorer: interrupted during expansion at depth={}", depth);
+                    futures.forEach(f -> f.cancel(true));
+                    break;
+                } catch (ExecutionException ex) {
+                    log.debug("TreeOfThoughtsExplorer: expansion task failed: {}", ex.getMessage());
+                }
+            }
         }
 
         return candidates.stream()
@@ -308,31 +312,44 @@ public class TreeOfThoughtsExplorer {
             final String parentContext) {
 
         CopyOnWriteArrayList<ScoredThought> scored = new CopyOnWriteArrayList<>();
-        CountDownLatch latch = new CountDownLatch(thoughts.size());
 
-        for (String thought : thoughts) {
-            final String fullPath = parentContext.isBlank()
-                    ? thought
-                    : parentContext + "\n→ " + thought;
+        try (var executor = Executors.newVirtualThreadPerTaskExecutor()) {
+            List<Future<?>> futures = new ArrayList<>();
+            for (String thought : thoughts) {
+                final String fullPath = parentContext.isBlank()
+                        ? thought
+                        : parentContext + "\n→ " + thought;
 
-            Thread.ofVirtual().start(() -> {
-                try {
-                    double score = evaluateThought(problem, fullPath);
-                    scored.add(new ScoredThought(fullPath, score));
-                } catch (Exception ex) {
-                    log.debug("TreeOfThoughtsExplorer: evaluation failed for thought: {}", ex.getMessage());
-                } finally {
-                    latch.countDown();
-                }
-            });
-        }
-
-        try {
-            if (!latch.await(timeoutSeconds, TimeUnit.SECONDS)) {
-                log.warn("TreeOfThoughtsExplorer: evaluation timed out");
+                futures.add(executor.submit(() -> {
+                    try {
+                        double score = evaluateThought(problem, fullPath);
+                        scored.add(new ScoredThought(fullPath, score));
+                    } catch (Exception ex) {
+                        log.debug("TreeOfThoughtsExplorer: evaluation failed for thought: {}", ex.getMessage());
+                    }
+                }));
             }
-        } catch (InterruptedException ex) {
-            Thread.currentThread().interrupt();
+
+            long endTime = System.currentTimeMillis() + (timeoutSeconds * 1000L);
+            for (var future : futures) {
+                long remaining = endTime - System.currentTimeMillis();
+                try {
+                    if (remaining > 0) {
+                        future.get(remaining, TimeUnit.MILLISECONDS);
+                    } else {
+                        future.cancel(true);
+                    }
+                } catch (TimeoutException ex) {
+                    log.warn("TreeOfThoughtsExplorer: evaluation timed out");
+                    future.cancel(true);
+                } catch (InterruptedException ex) {
+                    Thread.currentThread().interrupt();
+                    futures.forEach(f -> f.cancel(true));
+                    break;
+                } catch (ExecutionException ex) {
+                    log.debug("TreeOfThoughtsExplorer: evaluation task failed: {}", ex.getMessage());
+                }
+            }
         }
 
         return scored;

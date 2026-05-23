@@ -1,17 +1,9 @@
 /*
- * Copyright 2024-2025 the original authors.
+ * Copyright 2026 Shekhar Maheswari.
+ * All rights reserved.
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      https://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * This source code is private and proprietary until an explicit open-source
+ * license is published with this project.
  */
 package io.agentcore.llm;
 
@@ -26,8 +18,7 @@ package io.agentcore.llm;
  * <h3>Default behaviour</h3>
  * <p>When no custom strategy is set on a {@link LlmModelConfig}, the framework delegates
  * to {@link LlmProvider#buildCompletionsPath(String, String, String)} — the per-provider
- * built-in logic that handles the Walmart LLM Gateway conventions for each supported
- * provider.
+ * built-in logic for each supported provider.
  *
  * <h3>Implementor contract</h3>
  * <ul>
@@ -40,7 +31,7 @@ package io.agentcore.llm;
  * <h3>Built-in strategies</h3>
  * <p>Static factory methods on this interface cover the most common gateway conventions:
  * <ul>
- *   <li>{@link #walmarGatewayOpenAi()} — Walmart LLM Gateway OpenAI path with
+ *   <li>{@link #gatewayOpenAi()} — OpenAI-compatible gateway path with
  *       {@code @version} suffix</li>
  *   <li>{@link #azureOpenAi()} — Azure OpenAI deployment path without the {@code @version}
  *       suffix</li>
@@ -92,19 +83,19 @@ public interface CompletionsPathStrategy {
     String buildPath(String model, String version, String apiVersion);
 
     /**
-     * Returns the Walmart LLM Gateway path strategy for OpenAI-compatible models.
+     * Returns an OpenAI-compatible gateway path strategy.
      *
      * <p>Produces: {@code /openai/deployments/{model}@{version}/chat/completions}
      * (with {@code ?api-version={apiVersion}} appended when {@code apiVersion} is non-blank).
      * The {@code @version} suffix is omitted when {@code version} is blank or already present
      * in the model name.
      *
-     * <p>Use this strategy for any model routed through the Walmart LLM Gateway with the
+     * <p>Use this strategy for any model routed through a gateway with an
      * OpenAI-compatible backend (GPT, Llama, Gemma deployments).
      *
      * @return a stateless, reusable {@code CompletionsPathStrategy} instance
      */
-    static CompletionsPathStrategy walmarGatewayOpenAi() {
+    static CompletionsPathStrategy gatewayOpenAi() {
         return (model, version, apiVersion) -> {
             String modelWithVersion = buildModelWithVersion(model, version);
             StringBuilder path = new StringBuilder("/openai/deployments/")
@@ -125,7 +116,7 @@ public interface CompletionsPathStrategy {
      * intentionally ignored — the model is conveyed in the request body, not in the URL.
      *
      * <p>Use this strategy when connecting directly to {@code api.openai.com} without a
-     * Walmart gateway layer.
+     * gateway layer.
      *
      * @return a stateless, reusable {@code CompletionsPathStrategy} instance
      */
@@ -138,12 +129,11 @@ public interface CompletionsPathStrategy {
      *
      * <p>Produces: {@code /openai/deployments/{model}/chat/completions}
      * (with {@code ?api-version={apiVersion}} appended when {@code apiVersion} is non-blank).
-     * Unlike {@link #walmarGatewayOpenAi()}, this strategy does <em>not</em> append the
+     * Unlike {@link #gatewayOpenAi()}, this strategy does <em>not</em> append the
      * {@code @version} suffix to the deployment name — Azure uses the {@code api-version}
      * query parameter instead.
      *
-     * <p>Use this strategy when routing directly through Azure OpenAI Service endpoints
-     * rather than the Walmart LLM Gateway.
+     * <p>Use this strategy when routing directly through Azure OpenAI Service endpoints.
      *
      * @return a stateless, reusable {@code CompletionsPathStrategy} instance
      */
@@ -178,8 +168,7 @@ public interface CompletionsPathStrategy {
      * The {@code @version} suffix is omitted when {@code version} is blank or already
      * embedded in the model name.
      *
-     * <p>Use this strategy when targeting the Google AI Studio or Vertex AI endpoint that
-     * the Walmart LLM Gateway proxies for Gemini models.
+     * <p>Use this strategy when targeting a Google AI Studio or Vertex AI endpoint.
      *
      * @return a stateless, reusable {@code CompletionsPathStrategy} instance
      */

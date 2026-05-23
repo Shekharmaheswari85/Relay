@@ -1,24 +1,18 @@
 /*
- * Copyright 2024-2025 the original authors.
+ * Copyright 2026 Shekhar Maheswari.
+ * All rights reserved.
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      https://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * This source code is private and proprietary until an explicit open-source
+ * license is published with this project.
  */
 package io.agentcore.a2a;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 
@@ -179,16 +173,33 @@ public final class MultiAgentOrchestrator {
     public void routeWithNewSessions(
             final String agentId, final String correlationId, final String message, final PipelineEmitter emitter) {
 
-        List<String> sessionIds = new ArrayList<>(clients.size());
-        for (AgentClient client : clients) {
-            try {
-                String sessionId = client.createSession(agentId, "multi-agent:" + correlationId);
-                sessionIds.add(sessionId);
-            } catch (Exception ex) {
-                log.warn("Session creation failed for '{}': {}", client.getName(), ex.getMessage());
-                sessionIds.add("__failed__");
-            }
+        final String[] sessionIdsArray = new String[clients.size()];
+        CountDownLatch latch = new CountDownLatch(clients.size());
+        for (int i = 0; i < clients.size(); i++) {
+            final int index = i;
+            final AgentClient client = clients.get(i);
+            Thread.ofVirtual().start(() -> {
+                try {
+                    String sessionId = client.createSession(agentId, "multi-agent:" + correlationId);
+                    sessionIdsArray[index] = sessionId;
+                } catch (Exception ex) {
+                    log.warn("Session creation failed for '{}': {}", client.getName(), ex.getMessage());
+                    sessionIdsArray[index] = "__failed__";
+                } finally {
+                    latch.countDown();
+                }
+            });
         }
+        try {
+            if (!latch.await(30, TimeUnit.SECONDS)) {
+                log.warn("MultiAgent session creation timed out");
+            }
+        } catch (InterruptedException ex) {
+            Thread.currentThread().interrupt();
+            log.warn("MultiAgent session creation interrupted");
+        }
+
+        List<String> sessionIds = Arrays.asList(sessionIdsArray);
         route(sessionIds, message, emitter);
     }
 

@@ -1,17 +1,9 @@
 /*
- * Copyright 2024-2025 the original authors.
+ * Copyright 2026 Shekhar Maheswari.
+ * All rights reserved.
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      https://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * This source code is private and proprietary until an explicit open-source
+ * license is published with this project.
  */
 package io.agentcore.advisor;
 
@@ -33,6 +25,7 @@ import org.springframework.ai.chat.model.Generation;
 import org.springframework.ai.tool.annotation.Tool;
 import org.springframework.context.ApplicationContext;
 import org.springframework.core.Ordered;
+import org.springframework.core.annotation.AnnotatedElementUtils;
 import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Component;
 
@@ -170,7 +163,7 @@ public class ConfirmationGateAdvisor implements CallAdvisor {
                 .entrySet()
                 .stream()
                 .filter(entry -> {
-                    AgentTool annotation = entry.getValue().getClass().getAnnotation(AgentTool.class);
+                    AgentTool annotation = AnnotatedElementUtils.findMergedAnnotation(entry.getValue().getClass(), AgentTool.class);
                     return annotation != null && annotation.category() == ToolCategory.MUTATION;
                 })
                 .map(entry -> resolveToolName(entry.getKey(), entry.getValue()))

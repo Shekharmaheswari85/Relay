@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-    SpotBugs exclusion filter for walmart-agent-core.
+    SpotBugs exclusion filter for agentcore.
 
     Excludes:
       - Lombok-generated synthetic methods (builders, constructors, equals/hashCode)

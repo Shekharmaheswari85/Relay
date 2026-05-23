@@ -1,17 +1,9 @@
 /*
- * Copyright 2024-2025 the original authors.
+ * Copyright 2026 Shekhar Maheswari.
+ * All rights reserved.
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      https://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * This source code is private and proprietary until an explicit open-source
+ * license is published with this project.
  */
 package io.agentcore.thread;
 
@@ -27,7 +19,7 @@ import org.springframework.stereotype.Component;
  * {@link org.springframework.core.task.TaskExecutor} for fire-and-forget
  * asynchronous work that does not fit naturally into a reactive pipeline.
  *
- * <p>Spring wires the {@code virtualThreadTaskExecutor} bean into this component
+ * <p>Spring wires the {@code virtualThreadExecutor} bean into this component
  * at startup and stores it in an {@link java.util.concurrent.atomic.AtomicReference}.
  * Call sites throughout the agent pipeline obtain it via the static
  * {@link #executeAsync} or {@link #getTaskExecutor} accessors without requiring
@@ -64,7 +56,7 @@ public final class VirtualThreadTaskExecutorUtil {
     private static final AtomicReference<TaskExecutor> TASK_EXECUTOR = new AtomicReference<>();
 
     /**
-     * Receives the {@code virtualThreadTaskExecutor} bean from the application
+     * Receives the {@code virtualThreadExecutor} bean from the application
      * context and stores it for static access.
      *
      * @param virtualThreadTaskExecutor the {@link org.springframework.core.task.TaskExecutor}
@@ -72,7 +64,7 @@ public final class VirtualThreadTaskExecutorUtil {
      *                                  be {@code null}
      */
     VirtualThreadTaskExecutorUtil(
-            @Qualifier("virtualThreadTaskExecutor") final TaskExecutor virtualThreadTaskExecutor) {
+            @Qualifier("virtualThreadExecutor") final TaskExecutor virtualThreadTaskExecutor) {
         TASK_EXECUTOR.set(virtualThreadTaskExecutor);
     }
 

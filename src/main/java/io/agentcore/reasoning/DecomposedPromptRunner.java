@@ -1,17 +1,9 @@
 /*
- * Copyright 2024-2025 the original authors.
+ * Copyright 2026 Shekhar Maheswari.
+ * All rights reserved.
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      https://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * This source code is private and proprietary until an explicit open-source
+ * license is published with this project.
  */
 package io.agentcore.reasoning;
 
@@ -21,8 +13,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.lang.NonNull;
@@ -217,34 +212,46 @@ public class DecomposedPromptRunner {
             final String task, final List<String> subTasks) {
 
         ConcurrentHashMap<Integer, String> results = new ConcurrentHashMap<>();
-        CountDownLatch latch = new CountDownLatch(subTasks.size());
 
-        for (int i = 0; i < subTasks.size(); i++) {
-            final int index = i;
-            final String subTask = subTasks.get(i);
+        try (var executor = Executors.newVirtualThreadPerTaskExecutor()) {
+            List<Future<?>> futures = new ArrayList<>();
+            for (int i = 0; i < subTasks.size(); i++) {
+                final int index = i;
+                final String subTask = subTasks.get(i);
 
-            Thread.ofVirtual().start(() -> {
-                try {
-                    String result = executeSubTask(task, subTask);
-                    if (result != null && !result.isBlank()) {
-                        results.put(index, result.trim());
+                futures.add(executor.submit(() -> {
+                    try {
+                        String result = executeSubTask(task, subTask);
+                        if (result != null && !result.isBlank()) {
+                            results.put(index, result.trim());
+                        }
+                    } catch (Exception ex) {
+                        log.debug("DecomposedPromptRunner: sub-task {} failed: {}", index + 1, ex.getMessage());
                     }
-                } catch (Exception ex) {
-                    log.debug("DecomposedPromptRunner: sub-task {} failed: {}", index + 1, ex.getMessage());
-                } finally {
-                    latch.countDown();
-                }
-            });
-        }
-
-        try {
-            if (!latch.await(timeoutSeconds, TimeUnit.SECONDS)) {
-                log.warn("DecomposedPromptRunner: {} of {} sub-tasks completed within timeout",
-                        results.size(), subTasks.size());
+                }));
             }
-        } catch (InterruptedException ex) {
-            Thread.currentThread().interrupt();
-            log.warn("DecomposedPromptRunner: interrupted while waiting for sub-tasks");
+
+            long endTime = System.currentTimeMillis() + (timeoutSeconds * 1000L);
+            for (var future : futures) {
+                long remaining = endTime - System.currentTimeMillis();
+                try {
+                    if (remaining > 0) {
+                        future.get(remaining, TimeUnit.MILLISECONDS);
+                    } else {
+                        future.cancel(true);
+                    }
+                } catch (TimeoutException ex) {
+                    log.warn("DecomposedPromptRunner: sub-task execution timed out");
+                    future.cancel(true);
+                } catch (InterruptedException ex) {
+                    Thread.currentThread().interrupt();
+                    log.warn("DecomposedPromptRunner: interrupted while waiting for sub-tasks");
+                    futures.forEach(f -> f.cancel(true));
+                    break;
+                } catch (ExecutionException ex) {
+                    log.debug("DecomposedPromptRunner: sub-task execution failed: {}", ex.getMessage());
+                }
+            }
         }
 
         return results;
