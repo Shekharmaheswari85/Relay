@@ -186,7 +186,6 @@
                     <failOnError>true</failOnError>
                     <skip>${spotbugs.skip}</skip>
                     <excludeFilterFile>${maven.multiModuleProjectDirectory}/spotbugs-exclude.xml</excludeFilterFile>
-                    <linkXRef>false</linkXRef>
                 </configuration>
                 <executions>
                     <execution>
@@ -209,7 +208,6 @@
                 <configuration>
                     <targetJdk>${java.version}</targetJdk>
                     <skip>${pmd.skip}</skip>
-                    <failOnError>true</failOnError>
                     <failOnViolation>true</failOnViolation>
                     <linkXRef>false</linkXRef>
                     <printFailingErrors>true</printFailingErrors>

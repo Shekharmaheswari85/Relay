@@ -10,14 +10,9 @@
         <version>${revision}</version>
     </parent>
 
-    <!--
-        Backward-compatible shim: artifactId stays "agentcore" so existing consumers
-        that declare <artifactId>agentcore</artifactId> continue to work unchanged.
-        Simply pulls in all five feature modules as compile dependencies.
-    -->
-    <artifactId>agentcore</artifactId>
+    <artifactId>agentcore-starter</artifactId>
     <name>Agent Core :: Starter</name>
-    <description>Convenience starter — pulls in all Agent Core modules. Replaces the old monolithic agentcore jar.</description>
+    <description>Convenience starter — pulls in all Agent Core modules with a single dependency.</description>
 
     <dependencies>
         <dependency>
