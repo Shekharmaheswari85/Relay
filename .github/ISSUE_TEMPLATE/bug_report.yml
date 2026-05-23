@@ -1,0 +1,77 @@
+name: Bug Report
+description: Something isn't working as expected
+labels: ["bug", "triage"]
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to file a bug. Please fill out the sections below.
+
+  - type: textarea
+    id: description
+    attributes:
+      label: What happened?
+      description: A clear description of the bug.
+      placeholder: "When I do X, Y happens instead of Z."
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Steps to reproduce
+      description: Minimal steps to reliably reproduce the issue.
+      placeholder: |
+        1. Configure X
+        2. Call Y
+        3. See error
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+      description: What should have happened?
+    validations:
+      required: true
+
+  - type: input
+    id: version
+    attributes:
+      label: Agent Core version
+      placeholder: "e.g. 1.0.3"
+    validations:
+      required: true
+
+  - type: input
+    id: java_version
+    attributes:
+      label: Java version
+      placeholder: "e.g. Java 21.0.2"
+    validations:
+      required: true
+
+  - type: input
+    id: spring_boot_version
+    attributes:
+      label: Spring Boot version
+      placeholder: "e.g. 3.4.1"
+    validations:
+      required: false
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Relevant logs or stack trace
+      render: text
+    validations:
+      required: false
+
+  - type: textarea
+    id: additional
+    attributes:
+      label: Additional context
+    validations:
+      required: false

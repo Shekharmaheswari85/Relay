@@ -1,0 +1,49 @@
+name: CI
+
+on:
+  pull_request:
+    branches:
+      - main
+      - develop
+  push:
+    branches:
+      - main
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Build & Quality Gate
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+          cache: 'maven'
+
+      - name: Build and verify (SpotBugs + PMD)
+        run: mvn -B verify
+
+      - name: Upload SpotBugs report
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: spotbugs-report
+          path: target/spotbugsXml.xml
+          retention-days: 7
+
+      - name: Upload PMD report
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pmd-report
+          path: target/pmd.xml
+          retention-days: 7
