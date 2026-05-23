@@ -8,7 +8,7 @@
 package io.agentcore.exception;
 
 /**
- * Thrown by {@link io.agentcore.guard.MutationToolGuard#assertSessionContext(String)} when a
+ * Thrown by {@code io.agentcore.guard.MutationToolGuard#assertSessionContext(String)} when a
  * mutation tool is invoked directly through the MCP SSE endpoint — or by any other path that
  * bypasses the {@code ChatClient} pipeline — without an active session bound to the current
  * thread.
@@ -20,7 +20,7 @@ package io.agentcore.exception;
  * call skips all of those advisors, making direct mutation tool access a security and
  * auditability risk.
  *
- * <p>The {@link io.agentcore.aspect.BaseMcpCallInterceptor} enforces this rule at the
+ * <p>The {@code io.agentcore.aspect.BaseMcpCallInterceptor} enforces this rule at the
  * {@code ToolCallback} layer; {@code MutationToolGuard} provides an additional line of defence
  * inside each tool method itself so that the rule holds even if the interceptor is bypassed
  * (e.g. via direct bean invocation in tests or a future Spring AI API change).
@@ -35,9 +35,7 @@ package io.agentcore.exception;
  *       called directly via MCP without a session.</li>
  * </ol>
  *
- * @see io.agentcore.guard.MutationToolGuard
  * @see DirectToolCallBlockedException
- * @see io.agentcore.tool.ToolCategory
  */
 public class McpDirectMutationBlockedException extends IllegalStateException {
 

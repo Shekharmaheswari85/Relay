@@ -1,34 +1,30 @@
 # agentcore-orchestrator
 
-**Full orchestration layer — advisors, A2A protocol, agent routing, memory, RAG, reasoning strategies, and Spring Boot auto-configuration.**
+**Full orchestration layer — advisors, A2A protocol, agent routing, memory, RAG, reasoning strategies, session expiry, and Spring Boot auto-configuration.**
 
 This is the top-level Agent Core module. It wires together every other module, provides all 8 built-in advisors, and registers the auto-configuration that activates Agent Core in any Spring Boot application.
 
 ## What's inside
 
-| Package        | Contents                                                                                                   |
-|----------------|------------------------------------------------------------------------------------------------------------|
-| `advisor/`     | 8 built-in advisors: `BaseAuditAdvisor`, `CircuitBreakerAdvisor`, `ConfirmationGateAdvisor`, `FallbackModelAdvisor`, `MemoryAdvisor`, `RagAdvisor`, `RateLimitAdvisor`, `ReflectionAdvisor`, `ThinkingAdvisor` |
-| `a2a/`         | `AgentClient`, `AgentClientRegistry`, `A2AHttpClient`, `A2AAuthContributor`, `AgentCard`, `AgentCardController`, `SseEventParser` |
-| `agent/`       | `BaseSubAgent`, `AgentExecutionContext`                                                                    |
-| `audit/`       | `AgentRequestTrace`                                                                                        |
-| `config/`      | `AgentCoreAutoConfiguration`, `ChatClientAutoConfiguration`, `AgentCoreProperties`, `EnableAgentCore`     |
-| `executor/`    | `AgentExecutor`, `AgentRegistry`, `BaseAgentRuntimeService`                                               |
-| `guard/`       | `MutationToolGuard`, `ToolSessionGuard`                                                                    |
-| `lifecycle/`   | `BaseSessionLifecycleService`                                                                              |
-| `memory/`      | `AgentMemoryManager`, `InMemoryAgentMemoryManager`, `MemoryEntry`, `MemoryType`                           |
-| `memory/entity`| `EntityFact`, `EntityMemoryStore`, `InMemoryEntityMemoryStore`                                            |
-| `memory/persona`| `PersonaMemory`, `PersonaStore`, `InMemoryPersonaStore`                                                  |
-| `orchestrator/`| `BaseAgentOrchestrator`                                                                                   |
-| `parser/`      | `BaseMessageParser`                                                                                        |
-| `pipeline/`    | `BaseAgentPipelineExecutor`                                                                               |
-| `rag/`         | `RagAdvisor`, `AgentRetriever`, `SpringAiVectorStoreRetriever`, `RetrievedDocument`                       |
-| `reasoning/`   | `LeastToMostSolver`, `SelfConsistencyRunner`, `TreeOfThoughtsExplorer`, `DecomposedPromptRunner`          |
-| `router/`      | `BaseIntentRouter`, `LlmIntentRouter`                                                                     |
-| `scheduler/`   | `BaseSessionExpiryScheduler`                                                                              |
-| `session/`     | `TenantResolver`                                                                                           |
-| `summary/`     | `SessionSummarizer`, `BaseLlmSessionSummarizer`, `SummaryPromptProvider`                                  |
-| `web/`         | `BaseAgentController`                                                                                      |
+| Package          | Contents                                                                                                                                                                                                                            |
+|------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `advisor/`       | 8 built-in advisors: `ConfirmationGateAdvisor`, `CircuitBreakerAdvisor`, `RateLimitAdvisor`, `MemoryAdvisor`, `RagAdvisor`, `BaseAuditAdvisor`, `ThinkingAdvisor`, `FallbackModelAdvisor`                                           |
+| `a2a/`           | `AgentClient`, `AgentClientRegistry`, `A2AHttpClient`, `A2AAuthContributor`, `StaticBearerTokenA2AAuthContributor`, `ApiKeyA2AAuthContributor`, `BasicAuthA2AAuthContributor`, `AgentCard`, `AgentCardController`, `SseEventParser` |
+| `agent/`         | `BaseSubAgent`, `AgentExecutionContext`                                                                                                                                                                                             |
+| `audit/`         | `AgentRequestTrace`                                                                                                                                                                                                                 |
+| `config/`        | `AgentCoreAutoConfiguration`, `ChatClientAutoConfiguration`, `AgentCoreProperties`, `AgentLlmProperties`, `EnableAgentCore`                                                                                                         |
+| `executor/`      | `AgentExecutor`, `AgentRegistry`, `BaseAgentRuntimeService`                                                                                                                                                                         |
+| `lifecycle/`     | `BaseSessionLifecycleService`                                                                                                                                                                                                       |
+| `memory/`        | `AgentMemoryManager`, `InMemoryAgentMemoryManager`, `MemoryEntry`, `MemoryType`                                                                                                                                                     |
+| `memory/entity`  | `EntityFact`, `EntityMemoryStore`, `InMemoryEntityMemoryStore`                                                                                                                                                                      |
+| `memory/persona` | `PersonaMemory`, `PersonaStore`, `InMemoryPersonaStore`                                                                                                                                                                             |
+| `orchestrator/`  | `BaseAgentOrchestrator`                                                                                                                                                                                                             |
+| `rag/`           | `RagAdvisor`, `AgentRetriever`, `SpringAiVectorStoreRetriever`, `RetrievedDocument`                                                                                                                                                 |
+| `reasoning/`     | `LeastToMostSolver`, `SelfConsistencyRunner`, `TreeOfThoughtsExplorer`, `DecomposedPromptRunner`                                                                                                                                    |
+| `scheduler/`     | `BaseSessionExpiryScheduler`, `DefaultSessionExpiryScheduler`                                                                                                                                                                       |
+| `session/`       | `TenantResolver`                                                                                                                                                                                                                    |
+| `summary/`       | `SessionSummarizer`, `BaseLlmSessionSummarizer`                                                                                                                                                                                     |
+| `web/`           | `BaseAgentController`                                                                                                                                                                                                               |
 
 ## Dependency
 
@@ -41,37 +37,95 @@ This is the top-level Agent Core module. It wires together every other module, p
 
 ## Auto-configuration
 
-`AgentCoreAutoConfiguration` activates when `agentcore-orchestrator` is on the classpath. It wires:
+`AgentCoreAutoConfiguration` activates when `agentcore-orchestrator` is on the classpath. It automatically wires:
 
 - `AgentMemoryManager` (in-memory by default)
-- `AgentCache` (Caffeine by default; Redis when configured)
-- `ToolDedupCache`
-- `AgentRegistry` (scans for `@Component BaseSubAgent` beans)
-- `AgentCardController` (when A2A is enabled)
-- JPA store beans (when `spring-boot-starter-data-jpa` is on the classpath and concrete repos are defined)
-- Redis cache beans (when `spring-boot-starter-data-redis` is on the classpath)
-
-Alternatively, use `@EnableAgentCore` on your main application class for explicit opt-in:
-
-```java
-@SpringBootApplication
-@EnableAgentCore
-public class MyApplication { ... }
-```
+- `EntityMemoryStore` and `PersonaStore` (in-memory by default)
+- `AgentCache` — Caffeine (`inmemory`) or Redis (`redis`) based on `agent.cache.type`
+- `ToolResultCache` — with optional dedicated TTL from `agent.cache.tool-ttl`
+- `ToolDedupCache` — local or Redis-backed
+- `RagAdvisor` — **auto-wired** when an `AgentRetriever` bean is present
+- `DefaultSessionExpiryScheduler` — **auto-wired** when `agent.session.expiry.enabled=true` and JPA is present
+- `agentCommonTagsMeterFilter` — adds `agent.metrics.common-tags` to all `agent.*` Micrometer metrics
+- `AgentRegistry` (scans for `AgentExecutor` beans)
+- `AgentCardController` (when `agent.a2a.enabled=true`)
+- JPA store beans (when `spring-boot-starter-data-jpa` is present and concrete repos are defined)
 
 ## Advisor Chain
 
 Eight advisors execute in a deterministic order:
 
 ```
-HIGHEST_PRECEDENCE      ConfirmationGateAdvisor  — block mutations without user approval
-HIGHEST_PRECEDENCE + 3  CircuitBreakerAdvisor    — prevent cascading LLM failures
-HIGHEST_PRECEDENCE + 5  RateLimitAdvisor         — throttle per-session or globally
-HIGHEST_PRECEDENCE + 5  MemoryAdvisor            — inject persona + entity + workflow memory
-HIGHEST_PRECEDENCE + 10 RagAdvisor               — retrieve & inject relevant documents
-                        BaseAuditAdvisor          — record LLM call events
-HIGHEST_PRECEDENCE + 20 ThinkingAdvisor          — emit chain-of-thought SSE events
-                        FallbackModelAdvisor      — fall back to utility model on error
+HIGHEST_PRECEDENCE      ConfirmationGateAdvisor   — block MUTATION tools without user approval
+HIGHEST_PRECEDENCE + 3  CircuitBreakerAdvisor     — prevent cascading LLM failures (Resilience4j)
+HIGHEST_PRECEDENCE + 5  RateLimitAdvisor          — throttle per-session or globally
+HIGHEST_PRECEDENCE + 5  MemoryAdvisor             — inject persona + entity + workflow memory
+HIGHEST_PRECEDENCE + 10 RagAdvisor                — retrieve & inject relevant documents
+                        BaseAuditAdvisor           — record LLM call events
+HIGHEST_PRECEDENCE + 20 ThinkingAdvisor           — emit chain-of-thought SSE events
+                        FallbackModelAdvisor       — fall back to utility model on error
+```
+
+### ConfirmationGateAdvisor + REST protocol
+
+Automatically activated — requires no bean registration. Blocks any `@AgentTool(category = MUTATION)` until the user confirms via `POST /sessions/{id}/confirm`:
+
+```http
+POST /api/my-agent/sessions/sess-abc123/confirm
+Content-Type: application/json
+Accept: text/event-stream
+
+{ "toolName": "delete_order", "confirmed": true }
+```
+
+The advisor detects the confirmation signal, enriches the request context with `user_confirmed=true`, and the pipeline continues. A `{ "confirmed": false }` request returns a clean rejection response without calling the LLM.
+
+Override `getAdditionalMutationTools()` or `getBlockedMessage()` for custom behaviour:
+
+```java
+@Component
+public class MyConfirmationGate extends ConfirmationGateAdvisor {
+
+    public MyConfirmationGate(MeterRegistry registry, ApplicationContext ctx) {
+        super(registry, ctx);
+    }
+
+    @Override
+    protected Set<String> getAdditionalMutationTools() {
+        return Set.of("bulk_export");   // extra tools not annotated with @AgentTool
+    }
+
+    @Override
+    protected String getBlockedMessage() {
+        return "Please confirm this sensitive operation before I proceed.";
+    }
+}
+```
+
+### RagAdvisor — zero-config wiring
+
+Declare an `AgentRetriever` bean and `RagAdvisor` is auto-configured with default settings:
+
+```java
+@Bean
+public AgentRetriever ragRetriever(VectorStore vectorStore) {
+    return new SpringAiVectorStoreRetriever(vectorStore);
+}
+// No @Bean RagAdvisor needed — auto-wired with maxDocuments=5, minScore=0.0
+```
+
+Override to customise:
+
+```java
+@Bean
+public RagAdvisor ragAdvisor(AgentRetriever retriever) {
+    return RagAdvisor.builder(retriever)
+            .maxDocuments(8)
+            .minScore(0.75)
+            .contextPrefix("\n[RELEVANT KNOWLEDGE]\n")
+            .contextSuffix("\n[END KNOWLEDGE]\n")
+            .build();
+}
 ```
 
 ### MemoryAdvisor
@@ -84,45 +138,6 @@ public MemoryAdvisor memoryAdvisor(AgentMemoryManager memoryManager) {
             .injectPrefix("\n<!-- AGENT MEMORY -->\n")
             .build();
 }
-
-// Override to extract and persist structured facts from LLM responses
-@Override
-protected List<EntityFact> extractEntities(String sessionId, String userId, String response) {
-    return entityExtractor.extract(response, sessionId, userId);
-}
-```
-
-### RagAdvisor
-
-```java
-@Bean
-public RagAdvisor ragAdvisor(AgentRetriever retriever) {
-    return RagAdvisor.builder(retriever)
-            .maxDocuments(5)
-            .minScore(0.75)
-            .contextPrefix("\n[RELEVANT DOCUMENTS]\n")
-            .build();
-}
-```
-
-Use the built-in Spring AI `VectorStore` adapter:
-
-```java
-@Bean
-public AgentRetriever retriever(VectorStore vectorStore) {
-    return new SpringAiVectorStoreRetriever(vectorStore);
-}
-```
-
-### ConfirmationGateAdvisor
-
-Automatically activated — requires no bean registration. Blocks any `@AgentTool(category = MUTATION)` until the user confirms:
-
-```
-User: "Delete all records from last quarter."
-Agent: "This will permanently delete 1,247 records. Please confirm to proceed."
-User: "Yes, confirmed."
-Agent: [executes deletion]
 ```
 
 ### CircuitBreakerAdvisor
@@ -150,9 +165,47 @@ public RateLimitAdvisor rateLimitAdvisor() {
 }
 ```
 
+## Automatic Session Expiry
+
+Enable the built-in scheduler to transition idle sessions to `EXPIRED`:
+
+```yaml
+agent:
+  session:
+    expiry:
+      enabled: true
+      idle-hours: 24
+      check-interval-ms: 3600000
+```
+
+`DefaultSessionExpiryScheduler` is auto-wired when this flag is `true` and JPA is present. It expires `ACTIVE` and `PAUSED` sessions idle longer than `idle-hours`. Override with your own `BaseSessionExpiryScheduler<S>` bean for custom post-expiry hooks (e.g. closing SSE sinks):
+
+```java
+@Component
+public class MyExpiryScheduler extends BaseSessionExpiryScheduler<MySessionDO> {
+
+    public MyExpiryScheduler(MySessionRepository repo) { super(repo); }
+
+    @Override protected long getSessionExpiryHours() { return 12; }
+    @Override protected List<String> getExpirableStatuses() {
+        return List.of(SessionStatus.ACTIVE.name());
+    }
+    @Override protected String getExpiredStatus() { return SessionStatus.EXPIRED.name(); }
+
+    @Override
+    protected void onSessionExpired(MySessionDO session) {
+        sseRegistry.close(session.getSessionId());
+        super.onSessionExpired(session);
+    }
+
+    @Scheduled(fixedDelayString = "${agent.session.expiry.check-interval-ms:3600000}")
+    public void runExpiry() { expireInactiveSessions(); }
+}
+```
+
 ## Agent-to-Agent (A2A) Communication
 
-HTTP-native protocol for multi-agent fan-out with SSE and JSON support:
+HTTP-native protocol for multi-agent fan-out with SSE and JSON support.
 
 ```yaml
 agent:
@@ -166,8 +219,48 @@ agent:
         response-timeout: 120s
 ```
 
+### A2A Authentication
+
+Three concrete `A2AAuthContributor` implementations are provided. Declare as `@Bean` and they are picked up automatically:
+
 ```java
-// Wrap as a sub-agent (recommended)
+// Bearer token (one agent)
+@Bean
+A2AAuthContributor bearerAuth(@Value("${inv.token}") String t) {
+    return new StaticBearerTokenA2AAuthContributor("inventory-agent", t);
+}
+
+// Bearer tokens (multiple agents)
+@Bean
+A2AAuthContributor multiAgentBearerAuth() {
+    return StaticBearerTokenA2AAuthContributor.forAgents(Map.of(
+            "inventory-agent",   System.getenv("INV_TOKEN"),
+            "fulfillment-agent", System.getenv("FUL_TOKEN")));
+}
+
+// Custom API key header
+@Bean
+A2AAuthContributor apiKeyAuth(@Value("${pricing.key}") String k) {
+    return new ApiKeyA2AAuthContributor("pricing-agent", "X-Api-Key", k);
+}
+
+// HTTP Basic auth
+@Bean
+A2AAuthContributor basicAuth(
+        @Value("${svc.user}") String u, @Value("${svc.pass}") String p) {
+    return new BasicAuthA2AAuthContributor("legacy-agent", u, p);
+}
+
+// Custom (dynamic tokens, OAuth2, etc.)
+@Bean
+A2AAuthContributor dynamicAuth(TokenService tokens) {
+    return (headers, agentName) -> headers.setBearerAuth(tokens.getToken(agentName));
+}
+```
+
+### Sub-agent wiring
+
+```java
 @Component
 public class RemoteInventorySubAgent extends RemoteAgentSubAgent<MySession, WorkflowStep> {
 
@@ -182,61 +275,9 @@ public class RemoteInventorySubAgent extends RemoteAgentSubAgent<MySession, Work
 }
 ```
 
-```java
-// Or call directly
-AgentClient inventoryAgent = registry.get("inventory-agent");
-String remoteSession = inventoryAgent.createSession(agentId, createdBy);
-try {
-    inventoryAgent.sendMessage(remoteSession, message, event ->
-        System.out.println(event.type() + ": " + event.data()));
-} finally {
-    inventoryAgent.deleteSession(remoteSession);
-}
-```
-
-Custom auth headers:
-
-```java
-@Component
-public class BearerTokenContributor implements A2AAuthContributor {
-
-    @Override
-    public void contribute(HttpHeaders headers, String agentName) {
-        headers.setBearerAuth(tokenService.getToken(agentName));
-    }
-}
-```
-
-## Multi-Agent Orchestration
-
-Register sub-agents as Spring beans; the orchestrator routes automatically:
-
-```java
-@Component
-@Order(1)
-public class DataCollectionAgent implements BaseSubAgent<MySession, WorkflowStep> {
-
-    @Override
-    public boolean canHandle(MySession session, WorkflowStep step) {
-        return step == WorkflowStep.COLLECT_DATA;
-    }
-
-    @Override
-    public String systemPrompt(MySession session, Map<String, Object> context) {
-        return "You are a data collection specialist...";
-    }
-
-    @Override
-    public List<String> ownedTools() { return List.of("fetch_records"); }
-}
-```
-
 ## Memory System
 
 ```java
-@Autowired
-private AgentMemoryManager memory;
-
 // Store
 memory.remember(MemoryEntry.builder()
         .sessionId(sessionId).userId(userId)
@@ -245,65 +286,21 @@ memory.remember(MemoryEntry.builder()
 // Recall
 List<MemoryEntry> relevant = memory.recall(sessionId, userId, MemoryType.WORKFLOW, query, 5);
 
-// Wipe session memory
-memory.forgetSession(sessionId);
-```
-
-### PersonaMemory
-
-```java
+// Persona
 PersonaMemory persona = PersonaMemory.empty(userId)
         .withPreference("prefers concise bullet-point responses")
         .withGoal("reduce quarterly operating costs by 15%")
         .withAttribute("role", "Operations Manager");
-
-// Injected automatically by MemoryAdvisor; or format manually:
-String fragment = persona.toPromptFragment();
-```
-
-### EntityFact
-
-```java
-EntityFact fact = new EntityFact(
-        "SKU-12345", "PRODUCT", "reorder_threshold", "150 units",
-        sessionId, userId, Instant.now());
-
-// Formats as: PRODUCT(SKU-12345).reorder_threshold = 150 units
-String fragment = fact.toPromptFragment();
 ```
 
 ## Reasoning Strategies
 
-| Strategy         | Class                    | When to use                              |
-|------------------|--------------------------|------------------------------------------|
-| Least-to-most    | `LeastToMostSolver`      | Multi-step decomposition                 |
-| Self-consistency | `SelfConsistencyRunner`  | High-stakes decisions (majority vote)    |
-| Tree-of-thoughts | `TreeOfThoughtsExplorer` | Exploratory / creative tasks             |
+| Strategy         | Class                    | When to use                               |
+|------------------|--------------------------|-------------------------------------------|
+| Least-to-most    | `LeastToMostSolver`      | Multi-step decomposition                  |
+| Self-consistency | `SelfConsistencyRunner`  | High-stakes decisions (majority vote)     |
+| Tree-of-thoughts | `TreeOfThoughtsExplorer` | Exploratory / creative tasks              |
 | Decomposition    | `DecomposedPromptRunner` | Complex queries with independent subtasks |
-
-## Session Lifecycle
-
-`BaseSessionLifecycleService` is the primary entry point for agent service classes:
-
-```java
-@Service
-public class MyAgentService extends BaseSessionLifecycleService<MyAgentSession, MyAuditLog> {
-
-    public MyAgentService(
-            AgentSessionStore<MyAgentSession> sessionStore,
-            AgentAuditLogStore<MyAuditLog> auditLogStore) {
-        super(sessionStore, auditLogStore);
-    }
-
-    @Override
-    protected MyAuditLog toAuditEvent(MyAgentSession session, String eventType) {
-        return MyAuditLog.builder()
-                .sessionId(session.getSessionId())
-                .eventType(eventType)
-                .build();
-    }
-}
-```
 
 ## Multi-tenant isolation
 
@@ -312,7 +309,7 @@ public class MyAgentService extends BaseSessionLifecycleService<MyAgentSession, 
 public class HeaderTenantResolver implements TenantResolver {
 
     @Override
-    public String resolveTenantId(HttpServletRequest request) {
+    public String resolve(HttpServletRequest request) {
         return request.getHeader("X-Tenant-ID");
     }
 }
@@ -322,17 +319,16 @@ public class HeaderTenantResolver implements TenantResolver {
 
 ```
 agentcore-orchestrator
-  └── agentcore-core
-  └── agentcore-cache
-  └── agentcore-store
-  └── agentcore-llm
-  └── spring-boot-starter-web
-  └── spring-boot-starter-aop
-  └── spring-ai-starter-model-openai (optional)
-  └── spring-ai-vector-store (optional)
-  └── spring-boot-starter-data-redis (optional)
-  └── spring-boot-starter-data-jpa (optional)
-  └── resilience4j-circuitbreaker
+  ├── agentcore-core
+  ├── agentcore-cache
+  ├── agentcore-store
+  ├── agentcore-llm
+  ├── spring-boot-starter-web
+  ├── spring-boot-starter-aop
+  ├── resilience4j-circuitbreaker
+  ├── spring-ai-vector-store (optional — for RagAdvisor)
+  ├── spring-boot-starter-data-redis (optional — for Redis cache/dedup)
+  └── spring-boot-starter-data-jpa (optional — for JPA stores + session expiry)
 ```
 
 See the [root README](../README.md) for full documentation.

@@ -18,8 +18,8 @@ import lombok.Getter;
  * Central registry of pre-built {@link ChatClient} instances, keyed by both
  * {@link ModelTier} (reasoning / utility) and {@link LlmProvider}.
  *
- * <p>The registry is populated by {@link io.agentcore.config.ChatClientAutoConfiguration}
- * at startup, using the model coordinates from {@link io.agentcore.config.AgentLlmProperties}.
+ * <p>The registry is populated by {@code ChatClientAutoConfiguration}
+ * at startup, using the model coordinates from {@code AgentLlmProperties}.
  * Agent code should never construct {@code ChatClient} instances directly — instead, inject
  * this registry and select the appropriate client for each call.
  *
@@ -55,8 +55,8 @@ import lombok.Getter;
  *
  * @see ModelTier
  * @see LlmProvider
- * @see io.agentcore.config.ChatClientAutoConfiguration
- * @see io.agentcore.config.AgentLlmProperties
+ * @see ModelTier
+ * @see LlmProvider
  */
 public class ChatClientRegistry {
 

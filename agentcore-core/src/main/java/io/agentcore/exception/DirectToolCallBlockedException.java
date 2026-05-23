@@ -8,7 +8,7 @@
 package io.agentcore.exception;
 
 /**
- * Thrown by {@link io.agentcore.guard.ToolSessionGuard#assertSessionContext(String)} when a
+ * Thrown by {@code io.agentcore.guard.ToolSessionGuard#assertSessionContext(String)} when a
  * protected tool's {@code apply()} method is invoked without an active session bound
  * to the current thread.
  *
@@ -30,7 +30,6 @@ package io.agentcore.exception;
  *       tool and clear it in a {@code finally} block.</li>
  * </ol>
  *
- * @see io.agentcore.guard.ToolSessionGuard
  * @see McpDirectMutationBlockedException
  */
 public class DirectToolCallBlockedException extends RuntimeException {

@@ -14,7 +14,7 @@ import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 
 /**
- * Auto-configured servlet {@link Filter} that guards all {@code /mcp/**} requests
+ * Auto-configured servlet {@link jakarta.servlet.Filter} that guards all {@code /mcp/**} requests
  * using a configurable shared-secret header.
  *
  * <p>This is the ready-to-use, configuration-driven implementation of the MCP SSE
@@ -47,7 +47,7 @@ import org.springframework.stereotype.Component;
  *
  * <h3>Customization</h3>
  * <p>To replace this filter with custom authentication (OAuth2, mTLS, etc.), set
- * {@code agent.mcp.sse.enabled=false} and register your own {@link Filter} bean, or
+ * {@code agent.mcp.sse.enabled=false} and register your own {@link jakarta.servlet.Filter} bean, or
  * extend {@link BaseMcpSseAuthFilter} directly.
  *
  * @see BaseMcpSseAuthFilter

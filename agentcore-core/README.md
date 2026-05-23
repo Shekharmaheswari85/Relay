@@ -9,9 +9,9 @@ This module has no Spring AI or database dependencies. It contains only the doma
 | Package      | Contents                                                                                 |
 |--------------|------------------------------------------------------------------------------------------|
 | `model/`     | `BaseAgentSession`, `BaseAuditLog`, `BaseAgentAuditLog`, `BaseToolResultCache`           |
-| `session/`   | `SessionContextHolder`, `SessionContextManager`, `SessionStatus`, `ActiveAgentHolder`   |
+| `session/`   | `SessionContextHolder`, `SessionContextManager`, `SessionStatus`, `ActiveAgentHolder`    |
 | `dto/`       | All REST request/response types (`BaseMessageRequest`, `BaseCreateSessionRequest`, etc.) |
-| `exception/` | `DirectToolCallBlockedException`, `McpDirectMutationBlockedException`                   |
+| `exception/` | `DirectToolCallBlockedException`, `McpDirectMutationBlockedException`                    |
 
 ## Dependency
 

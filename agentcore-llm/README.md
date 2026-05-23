@@ -6,16 +6,16 @@ This module bridges Spring AI's `ChatClient` with Agent Core's tool, streaming, 
 
 ## What's inside
 
-| Package          | Contents                                                                                        |
-|------------------|-------------------------------------------------------------------------------------------------|
-| `llm/`           | `ChatClientRegistry`, `LlmModelConfig`, `LlmProvider`, `ModelTier`, `CompletionsPathStrategy`  |
-| `prompt/`        | `PromptLoader`, `PromptRepository`, `ClasspathPromptRepository`, `BasePromptBuilder`           |
-| `stream/`        | `SseStreamHandler`, `PipelineEmitter`, `ThinkingStreamParser`, `ToolProgressPublisher`         |
+| Package          | Contents                                                                                                           |
+|------------------|--------------------------------------------------------------------------------------------------------------------|
+| `llm/`           | `ChatClientRegistry`, `LlmModelConfig`, `LlmProvider`, `ModelTier`, `CompletionsPathStrategy`                      |
+| `prompt/`        | `PromptLoader`, `PromptRepository`, `ClasspathPromptRepository`, `BasePromptBuilder`                               |
+| `stream/`        | `SseStreamHandler`, `PipelineEmitter`, `ThinkingStreamParser`, `ToolProgressPublisher`                             |
 | `tool/`          | `@AgentTool`, `ToolCategory`, `ToolContract`, `ToolExecutionSupport`, `BaseToolDecider`, `AutoDiscoveryToolConfig` |
-| `aspect/`        | `BaseToolExecutionAspect`, `BaseMcpCallInterceptor`, `DefaultMcpCallInterceptor`               |
-| `filter/`        | `BaseMcpSseAuthFilter`, `McpSseAuthFilter`                                                     |
-| `observability/` | `AgentObservabilityService`                                                                     |
-| `thread/`        | `VirtualThreadTaskExecutorUtil`                                                                 |
+| `aspect/`        | `BaseToolExecutionAspect`, `BaseMcpCallInterceptor`, `DefaultMcpCallInterceptor`                                   |
+| `filter/`        | `BaseMcpSseAuthFilter`, `McpSseAuthFilter`                                                                         |
+| `observability/` | `AgentObservabilityService`                                                                                        |
+| `thread/`        | `VirtualThreadTaskExecutorUtil`                                                                                    |
 
 ## Dependency
 

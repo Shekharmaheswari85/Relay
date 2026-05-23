@@ -16,7 +16,7 @@ import lombok.NoArgsConstructor;
 
 /**
  * Flat DTO projection of {@link AgentMetadata} used for REST API serialisation and
- * MCP tool exposure via {@link io.agentcore.executor.AgentExecutor#metadata()}.
+ * MCP tool exposure via {@code io.agentcore.executor.AgentExecutor#metadata()}.
  *
  * <p>Unlike {@link AgentMetadata}, which uses inner static classes for its nested
  * types, this DTO references the standalone {@link AgentIntentDTO} and

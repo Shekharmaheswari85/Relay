@@ -8,6 +8,7 @@
 package io.agentcore.advisor;
 
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -20,6 +21,7 @@ import org.springframework.ai.chat.client.ChatClientResponse;
 import org.springframework.ai.chat.client.advisor.api.CallAdvisor;
 import org.springframework.ai.chat.client.advisor.api.CallAdvisorChain;
 import org.springframework.ai.chat.messages.AssistantMessage;
+import org.springframework.ai.chat.messages.UserMessage;
 import org.springframework.ai.chat.model.ChatResponse;
 import org.springframework.ai.chat.model.Generation;
 import org.springframework.ai.tool.annotation.Tool;
@@ -63,6 +65,20 @@ public class ConfirmationGateAdvisor implements CallAdvisor {
     public static final String PENDING_MUTATION_KEY = "pending_mutation";
     public static final String PENDING_TOOL_KEY = "pending_tool";
 
+    /**
+     * Prefix injected by {@code POST /sessions/{sessionId}/confirm} when the user approves.
+     * {@code ConfirmationGateAdvisor} detects this prefix and enriches the context with
+     * {@code user_confirmed=true} before forwarding to the next advisor.
+     */
+    public static final String CONFIRM_PREFIX = "__AGENT_CONFIRM__:";
+
+    /**
+     * Prefix injected by {@code POST /sessions/{sessionId}/confirm} when the user rejects.
+     * {@code ConfirmationGateAdvisor} detects this prefix and returns a rejection response
+     * without calling the LLM.
+     */
+    public static final String REJECT_PREFIX = "__AGENT_REJECT__:";
+
     private static final String CONFIRMATION_REQUIRED_MSG =
             "CONFIRMATION_REQUIRED: This operation requires user confirmation before proceeding. "
                     + "Please review the plan above and confirm with 'yes' or 'approve' to continue.";
@@ -93,6 +109,27 @@ public class ConfirmationGateAdvisor implements CallAdvisor {
     public @NonNull ChatClientResponse adviseCall(
             final @NonNull ChatClientRequest chatClientRequest, final @NonNull CallAdvisorChain callAdvisorChain) {
 
+        // ── Intercept confirmation / rejection signals from POST /sessions/{id}/confirm ──
+        String userText = extractUserText(chatClientRequest);
+        if (userText != null) {
+            if (userText.startsWith(CONFIRM_PREFIX)) {
+                String toolName = userText.substring(CONFIRM_PREFIX.length()).strip();
+                if (!toolName.isBlank()) {
+                    return Objects.requireNonNull(
+                            processConfirmationSignal(chatClientRequest, toolName, true, callAdvisorChain),
+                            "Advisor response must not be null");
+                }
+            } else if (userText.startsWith(REJECT_PREFIX)) {
+                String toolName = userText.substring(REJECT_PREFIX.length()).strip();
+                if (!toolName.isBlank()) {
+                    return Objects.requireNonNull(
+                            processConfirmationSignal(chatClientRequest, toolName, false, callAdvisorChain),
+                            "Advisor response must not be null");
+                }
+            }
+        }
+
+        // ── Normal gate: block un-confirmed mutation tool calls ───────────────────────
         Map<String, Object> context = chatClientRequest.context();
 
         boolean pendingMutation = Boolean.TRUE.equals(context.get(PENDING_MUTATION_KEY));
@@ -147,6 +184,43 @@ public class ConfirmationGateAdvisor implements CallAdvisor {
      */
     protected String getBlockedMessage() {
         return CONFIRMATION_REQUIRED_MSG;
+    }
+
+    private String extractUserText(final ChatClientRequest request) {
+        return request.prompt().getInstructions().stream()
+                .filter(UserMessage.class::isInstance)
+                .map(msg -> ((UserMessage) msg).getText())
+                .findFirst()
+                .orElse(null);
+    }
+
+    private @NonNull ChatClientResponse processConfirmationSignal(
+            final ChatClientRequest request,
+            final String toolName,
+            final boolean confirmed,
+            final CallAdvisorChain chain) {
+
+        if (confirmed) {
+            log.info("Confirmation gate: user approved mutation tool '{}'", toolName);
+            Map<String, Object> enrichedContext = new HashMap<>(request.context());
+            enrichedContext.put(CONFIRMATION_KEY, true);
+            enrichedContext.put(PENDING_MUTATION_KEY, true);
+            enrichedContext.put(PENDING_TOOL_KEY, toolName);
+            ChatClientRequest approvedRequest = ChatClientRequest.builder()
+                    .prompt(request.prompt())
+                    .context(enrichedContext)
+                    .build();
+            return Objects.requireNonNull(chain.nextCall(approvedRequest), "Advisor response must not be null");
+        }
+
+        log.info("Confirmation gate: user rejected mutation tool '{}'", toolName);
+        AssistantMessage rejection = new AssistantMessage(
+                "REJECTED: The operation '" + toolName + "' was cancelled by the user.");
+        ChatResponse chatResponse = new ChatResponse(List.of(new Generation(rejection)));
+        return ChatClientResponse.builder()
+                .chatResponse(chatResponse)
+                .context(request.context())
+                .build();
     }
 
     private Set<String> getAutoDetectedMutationTools() {

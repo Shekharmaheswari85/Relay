@@ -23,13 +23,24 @@ import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.data.redis.serializer.RedisSerializer;
+import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 
+import java.util.List;
+
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.micrometer.core.instrument.Meter;
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.Tag;
+import io.micrometer.core.instrument.config.MeterFilter;
 import io.agentcore.a2a.AgentCardController;
 import io.agentcore.a2a.AgentClientRegistry;
 import io.agentcore.advisor.ConfirmationGateAdvisor;
 import io.agentcore.aspect.DefaultMcpCallInterceptor;
+import io.agentcore.rag.AgentRetriever;
+import io.agentcore.rag.RagAdvisor;
+import io.agentcore.scheduler.BaseSessionExpiryScheduler;
+import io.agentcore.scheduler.DefaultSessionExpiryScheduler;
 import io.agentcore.cache.AgentCache;
 import io.agentcore.cache.DefaultToolResultCache;
 import io.agentcore.cache.InMemoryAgentCache;
@@ -176,13 +187,22 @@ public class AgentCoreAutoConfiguration {
     /**
      * Tool result cache wrapping the configured {@link AgentCache}.
      *
+     * <p>When {@code agent.cache.tool-ttl} is set, tool result entries use that dedicated
+     * TTL instead of the global {@code agent.cache.ttl}. This is useful when tool outputs
+     * are short-lived (e.g., live inventory data) while other cache entries should persist
+     * longer (e.g., persona data).
+     *
      * @param agentCache the backing agent cache
      * @return a {@link DefaultToolResultCache} delegating to {@code agentCache}
      */
     @Bean
     @ConditionalOnMissingBean(ToolResultCache.class)
     public ToolResultCache toolResultCache(final AgentCache agentCache) {
-        return new DefaultToolResultCache(agentCache);
+        java.time.Duration toolTtl = properties.getCache().getToolTtl();
+        if (toolTtl != null) {
+            log.info("Tool result cache using dedicated TTL: {}", toolTtl);
+        }
+        return new DefaultToolResultCache(agentCache, toolTtl);
     }
 
     // ─── Prompt / Tool Tier Beans ─────────────────────────────────────────────
@@ -300,6 +320,93 @@ public class AgentCoreAutoConfiguration {
         return executor;
     }
 
+    // ─── Observability / Metrics Beans ───────────────────────────────────────
+
+    /**
+     * {@link MeterFilter} that injects user-configured common tags into every
+     * {@code agent.*} metric, enabling dashboard filtering by environment, service name,
+     * region, or any other dimension.
+     *
+     * <p>Only activated when {@code agent.metrics.enabled=true} (the default) and at least
+     * one tag is configured under {@code agent.metrics.common-tags}.
+     *
+     * <h3>Configuration</h3>
+     * <pre>{@code
+     * agent:
+     *   metrics:
+     *     common-tags:
+     *       service: order-agent
+     *       environment: production
+     *       region: us-east-1
+     * }</pre>
+     *
+     * <h3>Prometheus scrape endpoint (add to your application)</h3>
+     * <pre>{@code
+     * # pom.xml dependency
+     * <dependency>
+     *   <groupId>io.micrometer</groupId>
+     *   <artifactId>micrometer-registry-prometheus</artifactId>
+     * </dependency>
+     *
+     * # application.yml
+     * management:
+     *   endpoints:
+     *     web:
+     *       exposure:
+     *         include: prometheus,health,info
+     *   endpoint:
+     *     prometheus:
+     *       enabled: true
+     * }</pre>
+     *
+     * @return a {@link MeterFilter} that tags all {@code agent.*} metrics with the configured
+     *         common tags; returns an identity filter when no tags are configured
+     */
+    @Bean
+    @ConditionalOnProperty(name = "agent.metrics.enabled", havingValue = "true", matchIfMissing = true)
+    @ConditionalOnMissingBean(name = "agentCommonTagsMeterFilter")
+    public MeterFilter agentCommonTagsMeterFilter() {
+        Map<String, String> rawTags = properties.getMetrics().getCommonTags();
+        if (rawTags == null || rawTags.isEmpty()) {
+            return new MeterFilter() {};
+        }
+        List<Tag> tagList = rawTags.entrySet().stream()
+                .map(e -> Tag.of(e.getKey(), e.getValue()))
+                .toList();
+        log.info("Applying {} common tag(s) to all agent.* metrics: {}", tagList.size(), rawTags.keySet());
+        return new MeterFilter() {
+            @Override
+            public Meter.Id map(final Meter.Id id) {
+                if (id.getName().startsWith("agent.")) {
+                    return id.withTags(tagList);
+                }
+                return id;
+            }
+        };
+    }
+
+    // ─── RAG Beans ───────────────────────────────────────────────────────────
+
+    /**
+     * Default {@link RagAdvisor} that activates automatically when the application
+     * declares an {@link AgentRetriever} bean.
+     *
+     * <p>Retrieves up to 5 documents per request with no minimum score threshold and
+     * standard context delimiters. Override by declaring your own {@link RagAdvisor}
+     * bean with custom settings via {@link RagAdvisor#builder(AgentRetriever)}.
+     *
+     * @param retriever the application-supplied retriever; connects the advisor to a
+     *                  vector store, search index, or custom corpus
+     * @return a {@link RagAdvisor} using default settings
+     */
+    @Bean
+    @ConditionalOnBean(AgentRetriever.class)
+    @ConditionalOnMissingBean(RagAdvisor.class)
+    public RagAdvisor ragAdvisor(final AgentRetriever retriever) {
+        log.info("Auto-configuring RagAdvisor with default settings (maxDocuments=5, minScore=0.0)");
+        return RagAdvisor.builder(retriever).build();
+    }
+
     // ─── Private helpers ─────────────────────────────────────────────────────
 
     private String stripClasspathPrefix(final String path) {
@@ -307,6 +414,42 @@ public class AgentCoreAutoConfiguration {
             return path.substring("classpath:".length());
         }
         return path;
+    }
+
+    // ─── Session Expiry ───────────────────────────────────────────────────────
+
+    /**
+     * Nested configuration that registers the default session expiry scheduler only when
+     * {@code agent.session.expiry.enabled=true} and the JPA starter is present.
+     *
+     * <p>{@code @EnableScheduling} is scoped to this class so that Spring's scheduling
+     * post-processor is registered only when session expiry is actually needed, avoiding
+     * interference with applications that manage their own scheduling configuration.
+     */
+    @Configuration(proxyBeanMethods = false)
+    @ConditionalOnClass(name = "org.springframework.data.jpa.repository.JpaRepository")
+    @ConditionalOnProperty(name = "agent.session.expiry.enabled", havingValue = "true")
+    @EnableScheduling
+    static class SessionExpiryConfiguration {
+
+        /**
+         * Registers the {@link DefaultSessionExpiryScheduler} when a
+         * {@code BaseAgentSessionRepository} bean is present and no custom
+         * {@link BaseSessionExpiryScheduler} has been declared.
+         *
+         * @param agentSessionRepository the session repository used to query and expire sessions
+         * @param properties             the root agent properties carrying expiry configuration
+         * @return a scheduler that sweeps for idle sessions on the configured interval
+         */
+        @Bean
+        @ConditionalOnBean(name = "agentSessionRepository")
+        @ConditionalOnMissingBean(BaseSessionExpiryScheduler.class)
+        public DefaultSessionExpiryScheduler defaultSessionExpiryScheduler(
+                final io.agentcore.repository.BaseAgentSessionRepository<?> agentSessionRepository,
+                final AgentCoreProperties properties) {
+            long idleHours = properties.getSession().getExpiry().getIdleHours();
+            return new DefaultSessionExpiryScheduler(agentSessionRepository, idleHours);
+        }
     }
 
     // ─── JPA Store Beans ─────────────────────────────────────────────────────

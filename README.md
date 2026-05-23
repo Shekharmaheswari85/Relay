@@ -5,13 +5,13 @@
 **Production-ready, extensible foundation for building AI agents on Spring AI**
 
 [![Java 21](https://img.shields.io/badge/Java-21-orange?logo=openjdk)](https://openjdk.org/projects/jdk/21/)
-[![Spring Boot 3.4](https://img.shields.io/badge/Spring%20Boot-3.4.1-6db33f?logo=springboot)](https://spring.io/projects/spring-boot)
+[![Spring Boot 3.5](https://img.shields.io/badge/Spring%20Boot-3.5.x-6db33f?logo=springboot)](https://spring.io/projects/spring-boot)
 [![Spring AI 1.0](https://img.shields.io/badge/Spring%20AI-1.0.0-6db33f)](https://spring.io/projects/spring-ai)
 [![License](https://img.shields.io/badge/License-private-lightgrey)](LICENSE)
 
-Agent Core is a Spring Boot library that gives you the batteries-included scaffolding to build, run, and scale production AI agents — without writing the same boilerplate every time.
+Agent Core is a Spring Boot library that gives you batteries-included scaffolding to build, run, and scale production AI agents — without writing the same boilerplate every time.
 
-[Quick Start](#quick-start) · [Modules](#modules) · [Architecture](#architecture) · [Features](#features) · [Configuration](#configuration-reference) · [Contributing](#contributing)
+[Quick Start](#quick-start) · [Architecture](#architecture) · [Features](#features) · [Configuration](#configuration-reference) · [Extending](#extending-agent-core) · [Contributing](#contributing)
 
 </div>
 
@@ -19,20 +19,20 @@ Agent Core is a Spring Boot library that gives you the batteries-included scaffo
 
 ## Why Agent Core?
 
-Building an AI agent from scratch means wiring together LLM calls, session state, audit logs, memory, tool caching, rate limiting, circuit breakers, SSE streaming, and multi-agent coordination. That's weeks of infrastructure work before you write a single line of business logic.
+Building an AI agent from scratch means wiring together LLM calls, session state, audit logs, memory, tool caching, rate limiting, circuit breakers, SSE streaming, and multi-agent coordination. That is weeks of infrastructure work before you write a single line of business logic.
 
 Agent Core gives you all of that — tested, observable, and extensible — as a set of focused Maven modules. You focus on what your agent *does*; Agent Core handles how it *runs*.
 
-| Capability                   | What you get                                                                                               |
-|------------------------------|------------------------------------------------------------------------------------------------------------|
-| 🧠 5-tier memory system      | Entity facts · Persona profiles · Workflow memory · Knowledge base · Session context                       |
-| 🔗 8 built-in advisors       | Rate limiting · Circuit breaker · RAG · Memory injection · Confirmation gate · Audit · Thinking · Fallback |
-| 🤝 Agent-to-Agent (A2A)      | HTTP-native protocol for multi-agent fan-out with SSE streaming                                            |
-| 🗄️ Swappable store backends | In-memory (dev) → JPA → Redis → your own, zero code changes                                                |
-| 📊 Full observability        | Micrometer metrics · MDC logging · distributed tracing · SSE events                                        |
-| 🛡️ Production resilience    | Tool-result caching · session checkpoints · mutation confirmation gates                                    |
-| ⚡ Java 21 virtual threads    | Non-blocking I/O throughout; no reactive boilerplate                                                       |
-| 🧩 Open SPI                  | Plug in any LLM provider, vector store, auth contributor, retriever, or memory backend                     |
+| Capability | What you get |
+|---|---|
+| 🧠 **5-tier memory system** | Entity facts · Persona profiles · Workflow memory · Knowledge base · Session context |
+| 🔗 **8 built-in advisors** | Rate limiting · Circuit breaker · RAG (auto-wired) · Memory injection · Confirmation gate · Audit · Thinking · Fallback |
+| 🤝 **Agent-to-Agent (A2A)** | HTTP-native protocol for multi-agent fan-out with SSE streaming and pluggable auth |
+| 🗄️ **Swappable store backends** | In-memory (dev) → JPA → Redis → your own, zero code changes |
+| 📊 **Full observability** | Micrometer metrics · common-tag filters · MDC logging · distributed tracing |
+| 🛡️ **Production resilience** | Tool-result TTL caching · session checkpoints · mutation confirmation gates · auto session expiry |
+| ⚡ **Java 21 virtual threads** | Non-blocking I/O throughout; no reactive boilerplate |
+| 🧩 **Open SPI** | Plug in any LLM provider, vector store, auth contributor, retriever, or memory backend |
 
 ---
 
@@ -40,18 +40,16 @@ Agent Core gives you all of that — tested, observable, and extensible — as a
 
 Agent Core is structured as a multi-module Maven project. Import the BOM and pick exactly the modules you need.
 
-| Module                                                     | Artifact ID              | What it contains                                                                          |
-|------------------------------------------------------------|--------------------------|-------------------------------------------------------------------------------------------|
-| [agentcore-bom](agentcore-bom/README.md)                   | `agentcore-bom`          | Bill of Materials — consistent version alignment across all modules                       |
-| [agentcore-core](agentcore-core/README.md)                 | `agentcore-core`         | Domain model (`BaseAgentSession`, `BaseAuditLog`), DTOs, session context, exceptions      |
-| [agentcore-cache](agentcore-cache/README.md)               | `agentcore-cache`        | Caffeine and Redis caching abstractions, tool-result deduplication cache                  |
-| [agentcore-store](agentcore-store/README.md)               | `agentcore-store`        | Store interfaces, JPA adapters, Spring Data repositories, session checkpoints             |
-| [agentcore-llm](agentcore-llm/README.md)                   | `agentcore-llm`          | ChatClient registry, prompt loading, SSE streaming, tool framework, AOP interceptors      |
-| [agentcore-orchestrator](agentcore-orchestrator/README.md) | `agentcore-orchestrator` | A2A protocol, advisors, agent routing, memory, RAG, reasoning strategies, auto-config    |
+| Module                                                     | Artifact ID              | What it contains                                                                        |
+|------------------------------------------------------------|--------------------------|-----------------------------------------------------------------------------------------|
+| [agentcore-bom](agentcore-bom/README.md)                   | `agentcore-bom`          | Bill of Materials — consistent version alignment across all modules                     |
+| [agentcore-core](agentcore-core/README.md)                 | `agentcore-core`         | Domain model (`BaseAgentSession`, `BaseAuditLog`), DTOs, session context, exceptions    |
+| [agentcore-cache](agentcore-cache/README.md)               | `agentcore-cache`        | Caffeine and Redis caching, tool-result TTL cache, deduplication                        |
+| [agentcore-store](agentcore-store/README.md)               | `agentcore-store`        | Store interfaces, JPA adapters, Spring Data repositories, session checkpoints           |
+| [agentcore-llm](agentcore-llm/README.md)                   | `agentcore-llm`          | ChatClient registry, prompt loading, SSE streaming, tool framework, observability       |
+| [agentcore-orchestrator](agentcore-orchestrator/README.md) | `agentcore-orchestrator` | A2A protocol, 8 advisors, agent routing, memory, RAG, reasoning strategies, auto-config |
 
 ### Dependency management (recommended)
-
-Import the BOM to align all module versions automatically:
 
 ```xml
 <dependencyManagement>
@@ -67,9 +65,7 @@ Import the BOM to align all module versions automatically:
 </dependencyManagement>
 ```
 
-### Full stack (recommended starting point)
-
-`agentcore-orchestrator` transitively pulls in all other modules:
+`agentcore-orchestrator` transitively pulls in all other modules — the recommended single dependency for most teams:
 
 ```xml
 <dependency>
@@ -78,38 +74,128 @@ Import the BOM to align all module versions automatically:
 </dependency>
 ```
 
-### Selective dependency (pick only what you need)
+---
 
-```xml
-<!-- Core domain model — always required -->
-<dependency>
-    <groupId>io.agentcore</groupId>
-    <artifactId>agentcore-core</artifactId>
-</dependency>
+## Architecture
 
-<!-- Add caching -->
-<dependency>
-    <groupId>io.agentcore</groupId>
-    <artifactId>agentcore-cache</artifactId>
-</dependency>
+### Module dependency graph
 
-<!-- Add JPA persistence -->
-<dependency>
-    <groupId>io.agentcore</groupId>
-    <artifactId>agentcore-store</artifactId>
-</dependency>
+```mermaid
+graph TD
+    App["🖥️ Your Application<br/><small>@RestController · @Service · @AgentTool</small>"]
 
-<!-- Add LLM integration -->
-<dependency>
-    <groupId>io.agentcore</groupId>
-    <artifactId>agentcore-llm</artifactId>
-</dependency>
+    App --> ORCH
 
-<!-- Add full orchestration (advisors, A2A, auto-config) -->
-<dependency>
-    <groupId>io.agentcore</groupId>
-    <artifactId>agentcore-orchestrator</artifactId>
-</dependency>
+    subgraph ORCH["agentcore-orchestrator"]
+        direction TB
+        CHAIN["Advisor Chain<br/><small>ConfirmationGate → CircuitBreaker → RateLimit<br/>Memory → RAG → Audit → Thinking → Fallback</small>"]
+        A2A["A2A Protocol<br/><small>AgentClient · AgentClientRegistry<br/>StaticBearer · ApiKey · BasicAuth</small>"]
+        MEM["Memory System<br/><small>Entity · Persona · Workflow<br/>Knowledge · Session</small>"]
+        RAG["RAG<br/><small>AgentRetriever · RagAdvisor<br/>(auto-wired when retriever present)</small>"]
+        SCHED["Session Expiry<br/><small>DefaultSessionExpiryScheduler<br/>(auto-wired when enabled)</small>"]
+        REASON["Reasoning Strategies<br/><small>LeastToMost · TreeOfThoughts<br/>SelfConsistency · Decomposed</small>"]
+    end
+
+    subgraph LLM["agentcore-llm"]
+        CHAT["ChatClientRegistry<br/><small>OpenAI · Anthropic · Gemini · Llama</small>"]
+        TOOLS["Tool System<br/><small>@AgentTool · AutoDiscovery<br/>ToolResultCache (TTL)</small>"]
+        OBS["Observability<br/><small>Micrometer metrics · MDC<br/>CommonTag MeterFilter</small>"]
+        STREAM["SSE Streaming<br/><small>SseStreamHandler · PipelineEmitter<br/>ThinkingStreamParser</small>"]
+    end
+
+    subgraph STORE["agentcore-store"]
+        SESS["AgentSessionStore"]
+        AUDIT["AgentAuditLogStore"]
+        TCACHE["ToolResultCacheStore"]
+    end
+
+    subgraph CACHE["agentcore-cache"]
+        ICACHE["InMemoryAgentCache<br/><small>Caffeine · LRU/LFU/FIFO</small>"]
+        RCACHE["RedisAgentCache"]
+        DEDUP["ToolDedupCache"]
+    end
+
+    subgraph CORE["agentcore-core"]
+        MODEL["BaseAgentSession<br/><small>14 columns · SessionStatus</small>"]
+        CTX["SessionContextHolder<br/><small>ThreadLocal propagation</small>"]
+        DTOS["DTOs · Exceptions<br/><small>ConfirmMutationRequest<br/>SendMessageRequestDTO</small>"]
+    end
+
+    ORCH --> LLM
+    ORCH --> STORE
+    ORCH --> CACHE
+    LLM --> CORE
+    STORE --> CORE
+    CACHE --> CORE
+    ORCH --> CORE
+```
+
+### Request lifecycle — advisor chain sequence
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant UI as Browser / Client
+    participant CTL as BaseAgentController
+    participant SVC as BaseAgentRuntimeService
+    participant ADV as Advisor Chain
+    participant LLM as Spring AI ChatClient
+
+    UI->>+CTL: POST /sessions/{id}/messages
+    CTL->>+SVC: sendMessage(sessionId, content)
+    SVC->>+ADV: adviseCall(ChatClientRequest)
+
+    Note over ADV: 1 · ConfirmationGateAdvisor<br/>blocks MUTATION tools until confirmed
+    Note over ADV: 2 · CircuitBreakerAdvisor<br/>Resilience4j open/half-open/closed
+    Note over ADV: 3 · RateLimitAdvisor<br/>per-session or global throttle
+    Note over ADV: 4 · MemoryAdvisor<br/>injects entity + persona + workflow
+    Note over ADV: 5 · RagAdvisor (auto-wired)<br/>retrieves & injects documents
+    Note over ADV: 6 · BaseAuditAdvisor<br/>records LLM call events
+    Note over ADV: 7 · ThinkingAdvisor<br/>emits chain-of-thought SSE tokens
+    Note over ADV: 8 · FallbackModelAdvisor<br/>switches to utility model on error
+
+    ADV->>+LLM: ChatClient.call()
+    LLM-->>-ADV: ChatResponse
+    ADV-->>-SVC: ChatClientResponse
+    SVC-->>-CTL: SSE events (stage/message/done)
+    CTL-->>-UI: text/event-stream
+
+    alt MUTATION tool detected
+        CTL-->>UI: confirmation_required SSE event
+        UI->>CTL: POST /sessions/{id}/confirm<br/>{ toolName, confirmed: true }
+        CTL-->>UI: continuation SSE stream
+    end
+```
+
+### Module layout
+
+```
+io.agentcore
+│
+├── agentcore-core/
+│   └── model/, session/, dto/, exception/
+│
+├── agentcore-cache/
+│   └── cache/  (AgentCache, InMemoryAgentCache, RedisAgentCache, ToolDedupCache, DefaultToolResultCache)
+│
+├── agentcore-store/
+│   └── store/, repository/, checkpoint/
+│
+├── agentcore-llm/
+│   └── llm/, prompt/, stream/, tool/, aspect/, filter/, observability/, thread/
+│
+├── agentcore-orchestrator/
+│   └── a2a/         (AgentClient, AgentClientRegistry, *A2AAuthContributor)
+│       advisor/     (8 advisors incl. ConfirmationGateAdvisor, RagAdvisor)
+│       config/      (AgentCoreAutoConfiguration, AgentCoreProperties)
+│       executor/    (AgentExecutor, BaseAgentRuntimeService)
+│       memory/      (AgentMemoryManager, EntityMemoryStore, PersonaStore)
+│       rag/         (AgentRetriever, RagAdvisor, RetrievedDocument)
+│       reasoning/   (LeastToMostSolver, TreeOfThoughtsExplorer, ...)
+│       scheduler/   (BaseSessionExpiryScheduler, DefaultSessionExpiryScheduler)
+│       web/         (BaseAgentController)
+│
+└── agentcore-bom/   (version BOM, no Java sources)
 ```
 
 ---
@@ -119,10 +205,10 @@ Import the BOM to align all module versions automatically:
 ### Prerequisites
 
 - Java 21+
-- Spring Boot 3.4.x
+- Spring Boot 3.5.x
 - Maven 3.8+
 
-### 1. Import the BOM and add dependencies
+### 1. Import the BOM and add the orchestrator dependency
 
 ```xml
 <dependencyManagement>
@@ -160,7 +246,6 @@ Import the BOM to align all module versions automatically:
 ### 2. Configure your LLM
 
 ```yaml
-# application.yml
 agent:
   llm:
     gateway-base-url: https://api.openai.com
@@ -186,11 +271,6 @@ public class MyAgentSession extends BaseAgentSession {
 
     @Column(name = "customer_id")
     private String customerId;
-
-    @Override
-    public String getDomainContext() {
-        return "customer=" + customerId;
-    }
 }
 ```
 
@@ -203,114 +283,23 @@ public interface MySessionRepository
 }
 ```
 
-### 5. Build your agent service
+### 5. Expose your controller
 
 ```java
-@Service
-public class MyAgentService extends BaseSessionLifecycleService<MyAgentSession, MyAuditLog> {
+@RestController
+@RequestMapping("/api/my-agent")
+public class MyAgentController
+        extends BaseAgentController<MyAgentSession, BaseCreateSessionRequest> {
 
-    public MyAgentService(
-            AgentSessionStore<MyAgentSession> sessionStore,
-            AgentAuditLogStore<MyAuditLog> auditLogStore) {
-        super(sessionStore, auditLogStore);
-    }
-
-    @Override
-    protected MyAuditLog toAuditEvent(MyAgentSession session, String eventType) {
-        return MyAuditLog.builder()
-                .sessionId(session.getSessionId())
-                .eventType(eventType)
-                .build();
+    public MyAgentController(
+            MyAgentRuntimeService runtimeService,
+            ObjectProvider<TenantResolver> tenantResolver) {
+        super(runtimeService, tenantResolver.getIfAvailable());
     }
 }
 ```
 
-Agent Core auto-configures the rest: cache, memory manager, advisor chain, observability, and virtual thread executor.
-
----
-
-## Architecture
-
-```
-┌──────────────────────────────────────────────────────────────────────────┐
-│                            Your Application                              │
-│                                                                          │
-│  @RestController          @Service                    @Component         │
-│  BaseAgentController  →  BaseAgentRuntimeService  →  BaseSubAgent[]      │
-└─────────────────────────────────┬────────────────────────────────────────┘
-                                  │
-                    ┌─────────────▼─────────────┐
-                    │    agentcore-orchestrator  │
-                    │       Advisor Chain        │
-                    │  ConfirmationGate          │
-                    │  CircuitBreaker            │
-                    │  RateLimiter               │
-                    │  MemoryAdvisor             │
-                    │  RagAdvisor                │
-                    │  AuditAdvisor              │
-                    │  ThinkingAdvisor           │
-                    │  FallbackAdvisor           │
-                    └─────────────┬─────────────┘
-                                  │
-                    ┌─────────────▼─────────────┐
-                    │      agentcore-llm         │
-                    │   Spring AI ChatClient     │
-                    │  (OpenAI / Anthropic /     │
-                    │   Gemini / Llama / …)      │
-                    └───────────────────────────┘
-                                  │
-         ┌────────────────────────┼───────────────────────┐
-         │                        │                       │
-┌────────▼────────┐  ┌────────────▼───────────┐  ┌────────▼────────┐
-│  agentcore-     │  │    agentcore-store     │  │  agentcore-llm  │
-│  orchestrator   │  │  Session & Checkpoint  │  │   Tool System   │
-│  Memory System  │  │  BaseAgentSession      │  │  @AgentTool     │
-│  EntityFact     │  │  Repositories          │  │  ToolResultCache│
-│  PersonaMemory  │  │  AuditLog              │  │  GuardRules     │
-└────────┬────────┘  └────────────┬───────────┘  └────────┬────────┘
-         │                        │                       │
-         └────────────────────────┼───────────────────────┘
-                                  │
-                    ┌─────────────▼─────────────┐
-                    │      agentcore-cache       │
-                    │    AgentCache (Caffeine)   │
-                    │    RedisAgentCache         │
-                    │    ToolDedupCache          │
-                    └─────────────┬─────────────┘
-                                  │
-                    ┌─────────────▼─────────────┐
-                    │      agentcore-core        │
-                    │    BaseAgentSession        │
-                    │    SessionContextHolder    │
-                    │    DTOs / Exceptions       │
-                    └───────────────────────────┘
-```
-
-### Module layout
-
-```
-io.agentcore
-│
-├── agentcore-core/
-│   └── model/, session/, dto/, exception/
-│
-├── agentcore-cache/
-│   └── cache/  (AgentCache, RedisAgentCache, ToolDedupCache)
-│
-├── agentcore-store/
-│   └── store/, repository/, checkpoint/
-│
-├── agentcore-llm/
-│   └── llm/, prompt/, stream/, tool/, aspect/, filter/, observability/, thread/
-│
-├── agentcore-orchestrator/
-│   └── a2a/, advisor/, agent/, audit/, config/, executor/,
-│       guard/, lifecycle/, memory/, orchestrator/, parser/,
-│       pipeline/, rag/, reasoning/, router/, scheduler/,
-│       session/TenantResolver, summary/, web/
-│
-└── agentcore-bom/            (version BOM, no Java sources)
-```
+Agent Core autoconfigures everything else: cache, memory manager, advisor chain, session expiry, observability, and virtual thread executor.
 
 ---
 
@@ -320,33 +309,34 @@ io.agentcore
 
 Every agent interaction lives inside a **session** — a durable unit of work that can be paused, resumed, checkpointed, and audited.
 
-#### Base session entity
+| Column             | Type        | Purpose                                                  |
+|--------------------|-------------|----------------------------------------------------------|
+| `session_id`       | `VARCHAR`   | External identifier (URL-safe, prefixed)                 |
+| `agent_id`         | `VARCHAR`   | Which agent owns this session                            |
+| `current_step`     | `VARCHAR`   | Workflow step enum value                                 |
+| `status`           | `VARCHAR`   | `ACTIVE` · `PAUSED` · `COMPLETED` · `FAILED` · `EXPIRED` |
+| `context_json`     | `CLOB`      | Full conversation history                                |
+| `last_checkpoint`  | `VARCHAR`   | Step name to resume from                                 |
+| `active_sub_agent` | `VARCHAR`   | Currently handling sub-agent                             |
+| `auto_approve`     | `VARCHAR`   | JSON array of pre-approved tool names                    |
+| `tenant_id`        | `VARCHAR`   | Multi-tenant isolation key                               |
+| `created_at`       | `TIMESTAMP` | Immutable — set on insert                                |
+| `updated_at`       | `TIMESTAMP` | Auto-refreshed on every save                             |
 
-Extend `BaseAgentSession` (from `agentcore-core`) to add domain-specific fields:
+#### Automatic session expiry
 
-| Column             | Type        | Purpose                                        |
-|--------------------|-------------|------------------------------------------------|
-| `session_id`       | `VARCHAR`   | External identifier (URL-safe, prefixed)       |
-| `agent_id`         | `VARCHAR`   | Which agent owns this session                  |
-| `current_step`     | `VARCHAR`   | Workflow step enum value                       |
-| `status`           | `VARCHAR`   | `ACTIVE` · `PAUSED` · `COMPLETED` · `FAILED`   |
-| `context_json`     | `CLOB`      | Full conversation history (LLM context window) |
-| `last_checkpoint`  | `VARCHAR`   | Step name to resume from                       |
-| `active_sub_agent` | `VARCHAR`   | Currently handling sub-agent                   |
-| `auto_approve`     | `VARCHAR`   | JSON array of pre-approved tool names          |
-| `tenant_id`        | `VARCHAR`   | Multi-tenant isolation key                     |
-| `created_at`       | `TIMESTAMP` | Immutable — set on insert, never updated       |
-| `updated_at`       | `TIMESTAMP` | Auto-refreshed on every save                   |
+Enable the built-in scheduler to expire idle sessions automatically (requires JPA):
 
-#### Lifecycle operations
-
-```java
-MySession session = service.createSession(request);
-service.pauseSession(sessionId);
-service.resumeFromCheckpoint(sessionId, "STEP_3");
-service.transitionStatus(sessionId, SessionStatus.COMPLETED.name());
-service.deleteSession(sessionId);
+```yaml
+agent:
+  session:
+    expiry:
+      enabled: true          # activates DefaultSessionExpiryScheduler
+      idle-hours: 24         # sessions inactive >24h are marked EXPIRED
+      check-interval-ms: 3600000  # sweep runs every hour
 ```
+
+Override by declaring your own `BaseSessionExpiryScheduler<S>` bean for custom logic (e.g., closing SSE sinks, evicting caches on expiry).
 
 ---
 
@@ -354,13 +344,13 @@ service.deleteSession(sessionId);
 
 Agent Core provides a **5-tier memory hierarchy** that persists knowledge across sessions and users.
 
-| Type        | Scope            | Use case                                          |
-|-------------|------------------|---------------------------------------------------|
-| `ENTITY`    | Cross-session    | Structured facts about products, users, locations |
-| `PERSONA`   | Per-user         | Communication style, preferences, long-term goals |
-| `WORKFLOW`  | Cross-session    | Past Q&A exchanges, learned patterns              |
-| `KNOWLEDGE` | Global           | Domain facts, RAG-ingested documents              |
-| `SESSION`   | Current session  | Working memory, conversation-local state          |
+| Type        | Scope           | Use case                                          |
+|-------------|-----------------|---------------------------------------------------|
+| `ENTITY`    | Cross-session   | Structured facts about products, users, locations |
+| `PERSONA`   | Per-user        | Communication style, preferences, long-term goals |
+| `WORKFLOW`  | Cross-session   | Past Q&A exchanges, learned patterns              |
+| `KNOWLEDGE` | Global          | Domain facts, RAG-ingested documents              |
+| `SESSION`   | Current session | Working memory, conversation-local state          |
 
 ```java
 memory.remember(MemoryEntry.builder()
@@ -374,36 +364,31 @@ List<MemoryEntry> relevant = memory.recall(sessionId, userId, MemoryType.WORKFLO
 
 ### Advisor Chain
 
-Eight production-ready advisors that plug into Spring AI's `CallAroundAdvisor` chain in a deterministic order:
+Eight production-ready advisors that plug into Spring AI's `CallAdvisor` chain in a deterministic order:
 
 ```
-ConfirmationGateAdvisor  — block mutations without user approval
-CircuitBreakerAdvisor    — prevent cascading LLM failures
+ConfirmationGateAdvisor  — block MUTATION tools without user approval
+CircuitBreakerAdvisor    — prevent cascading LLM failures (Resilience4j)
 RateLimitAdvisor         — throttle per-session or globally
 MemoryAdvisor            — inject persona + entity + workflow memory
-RagAdvisor               — retrieve & inject relevant documents
+RagAdvisor               — retrieve & inject relevant documents (auto-wired)
 BaseAuditAdvisor         — record LLM call events
 ThinkingAdvisor          — emit chain-of-thought SSE events
 FallbackModelAdvisor     — fall back to utility model on error
 ```
 
-#### Write a custom advisor
+#### RagAdvisor — zero-config wiring
+
+If your application declares an `AgentRetriever` bean, `RagAdvisor` is auto-configured with defaults (max 5 docs, no score threshold). Override to customise:
 
 ```java
-@Component
-@Order(Ordered.HIGHEST_PRECEDENCE + 15)
-public class TokenBudgetAdvisor implements CallAroundAdvisor {
-
-    @Override
-    public String getName() { return "token-budget-advisor"; }
-
-    @Override
-    public ChatClientResponse aroundCall(ChatClientRequest request, CallAroundAdvisorChain chain) {
-        // Pre-call: enforce token budget
-        ChatClientResponse response = chain.nextAroundCall(request);
-        // Post-call: track spend
-        return response;
-    }
+@Bean
+public RagAdvisor ragAdvisor(AgentRetriever retriever) {
+    return RagAdvisor.builder(retriever)
+            .maxDocuments(8)
+            .minScore(0.75)
+            .contextPrefix("--- KNOWLEDGE ---\n")
+            .build();
 }
 ```
 
@@ -413,29 +398,59 @@ public class TokenBudgetAdvisor implements CallAroundAdvisor {
 
 ```java
 @Component
-public class InventoryTools {
+public class OrderTools {
 
     @AgentTool(
-        name        = "check_inventory",
-        description = "Returns the current stock level for a given SKU",
+        name        = "check_order_status",
+        description = "Returns the current status for a given order ID",
         category    = ToolCategory.QUERY)
-    public InventoryResult checkInventory(String sku) { ... }
+    public OrderStatus checkOrderStatus(String orderId) { ... }
 
     @AgentTool(
-        name        = "create_purchase_order",
-        description = "Creates a new PO — requires user confirmation",
+        name        = "cancel_order",
+        description = "Cancels an order — requires user confirmation",
         category    = ToolCategory.MUTATION)
-    public PurchaseOrder createPurchaseOrder(String sku, int quantity) { ... }
+    public CancelResult cancelOrder(String orderId) { ... }
 }
 ```
 
-`MUTATION` tools are intercepted by `ConfirmationGateAdvisor` and require explicit user confirmation before executing. Tool results are automatically cached using `sessionId::toolName::inputHash`.
+`MUTATION` tools are intercepted by `ConfirmationGateAdvisor`. Tool results are automatically cached per `sessionId::toolName::inputHash`.
+
+#### Tool result cache TTL
+
+Tool results can expire on a different schedule from the rest of the cache:
+
+```yaml
+agent:
+  cache:
+    ttl: 30m        # all other cache entries
+    tool-ttl: 5m    # tool results expire faster (live data)
+```
+
+---
+
+### Confirmation Gate Protocol
+
+When `ConfirmationGateAdvisor` blocks a `MUTATION` tool, the SSE stream emits a `confirmation_required` event containing the pending tool name. The UI should:
+
+1. Display a confirmation prompt to the user.
+2. `POST /sessions/{sessionId}/confirm` with the user's decision:
+
+```http
+POST /api/my-agent/sessions/sess-abc123/confirm
+Content-Type: application/json
+Accept: text/event-stream
+
+{ "toolName": "cancel_order", "confirmed": true }
+```
+
+The framework synthesises a confirmation signal, re-runs the pipeline with `user_confirmed=true` in context, and streams back the continuation response. A rejection response is returned immediately without calling the LLM.
 
 ---
 
 ### Agent-to-Agent (A2A) Communication
 
-HTTP-native protocol for multi-agent fan-out with SSE streaming support:
+HTTP-native protocol for multi-agent fan-out with SSE streaming.
 
 ```yaml
 agent:
@@ -448,41 +463,130 @@ agent:
         response-timeout: 120s
 ```
 
+#### Authentication
+
+Three concrete `A2AAuthContributor` implementations are provided. Declare one (or more) as `@Bean` and they are automatically picked up by `AgentClientRegistry`:
+
 ```java
-AgentClient inventoryAgent = registry.get("inventory-agent");
-String remoteSession = inventoryAgent.createSession(agentId, createdBy);
-inventoryAgent.sendMessage(remoteSession, message, event ->
-    System.out.println(event.type() + ": " + event.data()));
+// Static Bearer token
+@Bean
+public A2AAuthContributor bearerTokenAuth(
+        @Value("${inventory.token}") String token) {
+    return new StaticBearerTokenA2AAuthContributor("inventory-agent", token);
+}
+
+// API key header (e.g. X-Api-Key)
+@Bean
+public A2AAuthContributor apiKeyAuth(
+        @Value("${pricing.api-key}") String key) {
+    return new ApiKeyA2AAuthContributor("pricing-agent", "X-Api-Key", key);
+}
+
+// HTTP Basic auth
+@Bean
+public A2AAuthContributor basicAuth(
+        @Value("${fulfillment.username}") String user,
+        @Value("${fulfillment.password}") String pass) {
+    return new BasicAuthA2AAuthContributor("fulfillment-agent", user, pass);
+}
+
+// Multi-agent, one contributor
+@Bean
+public A2AAuthContributor allAgentTokens() {
+    return StaticBearerTokenA2AAuthContributor.forAgents(Map.of(
+            "inventory-agent",   System.getenv("INVENTORY_TOKEN"),
+            "fulfillment-agent", System.getenv("FULFILLMENT_TOKEN")));
+}
 ```
 
 ---
 
 ### SSE Streaming
 
-`SseStreamHandler` provides smart chunking, sanitization, thinking events, confirmation detection, and cached replay — from LLM token to browser in one pipeline.
+`SseStreamHandler` provides smart chunking at sentence boundaries, sanitization, thinking events, confirmation detection, and cached replay — from LLM token to browser in one pipeline.
 
-```java
-PipelineEmitter pipeline = new PipelineEmitter(emitter);
-chatClient.prompt().user(query).stream().chatResponse()
-        .doOnNext(response -> streamHandler.appendReadableStreamChunk(
-                response.getResult().getOutput().getText(), pipeline, context))
-        .blockLast();
-```
+SSE event types emitted by the framework:
+
+| Event type              | Description                                 |
+|-------------------------|---------------------------------------------|
+| `stage`                 | Agent processing stage label                |
+| `message`               | Streamed text chunk                         |
+| `thinking`              | Chain-of-thought token (ThinkingAdvisor)    |
+| `tool_progress`         | Tool execution progress                     |
+| `confirmation_required` | Mutation gate blocked — includes `toolName` |
+| `follow_up_questions`   | Suggested follow-ups                        |
+| `done`                  | Stream complete                             |
+| `error`                 | Pipeline error                              |
 
 ---
 
 ### Observability
 
-| Metric                   | Type    | Tags                           |
-|--------------------------|---------|--------------------------------|
-| `agent.session.count`    | Counter | `event`, `agentId`             |
-| `agent.llm.calls`        | Counter | `provider`, `model`, `outcome` |
-| `agent.llm.duration`     | Timer   | `provider`, `model`, `outcome` |
-| `agent.tool.calls`       | Counter | `tool`, `outcome`              |
-| `agent.handoff.count`    | Counter | `from`, `to`                   |
-| `agent.cache.operations` | Counter | `operation`, `type`            |
+#### Metrics
 
-All metrics appear in `/actuator/metrics` and export to any Micrometer registry without extra configuration.
+| Metric                            | Type    | Tags                           |
+|-----------------------------------|---------|--------------------------------|
+| `agent.session.count`             | Counter | `event`, `agentId`             |
+| `agent.llm.calls`                 | Counter | `provider`, `model`, `outcome` |
+| `agent.llm.duration`              | Timer   | `provider`, `model`, `outcome` |
+| `agent.tool.calls`                | Counter | `tool`, `outcome`              |
+| `agent.tool.duration`             | Timer   | `tool`, `outcome`              |
+| `agent.handoff.count`             | Counter | `from`, `to`                   |
+| `agent.cache.operations`          | Counter | `operation`, `type`            |
+| `agent.gate.confirmation.blocked` | Counter | —                              |
+
+#### Common tags for dashboard filtering
+
+```yaml
+agent:
+  metrics:
+    common-tags:
+      service: order-agent
+      environment: production
+      region: us-east-1
+```
+
+These tags are injected into every `agent.*` metric via a `MeterFilter` bean, leaving all other application metrics untouched.
+
+#### Prometheus export
+
+Add the dependency and expose the endpoint:
+
+```xml
+<dependency>
+    <groupId>io.micrometer</groupId>
+    <artifactId>micrometer-registry-prometheus</artifactId>
+</dependency>
+```
+
+```yaml
+management:
+  endpoints:
+    web:
+      exposure:
+        include: prometheus,health,info
+  endpoint:
+    prometheus:
+      enabled: true
+```
+
+#### DataDog export
+
+```xml
+<dependency>
+    <groupId>io.micrometer</groupId>
+    <artifactId>micrometer-registry-datadog</artifactId>
+</dependency>
+```
+
+```yaml
+management:
+  datadog:
+    metrics:
+      export:
+        api-key: ${DATADOG_API_KEY}
+        application-key: ${DATADOG_APP_KEY}
+```
 
 ---
 
@@ -504,25 +608,51 @@ Built-in backends: **in-memory** (default), **JPA** (add `spring-boot-starter-da
 
 ```yaml
 agent:
+
+  # ── Cache ──────────────────────────────────────────────────────────────────
   cache:
-    type: inmemory           # inmemory | redis
-    ttl: 30m
+    type: inmemory              # inmemory | redis
+    ttl: 30m                    # global entry TTL
+    tool-ttl: 5m                # tool result TTL override (optional)
+    key-prefix: "agent:cache:"
     inmemory:
       max-entries: 10000
-      eviction-policy: LRU  # LRU | LFU | FIFO
+      eviction-policy: LRU      # LRU | LFU | FIFO
     redis:
       host: ${REDIS_HOST}
       port: 6379
-      password: ${REDIS_PASSWORD}
+      password: ${REDIS_PASSWORD:}
+      pool:
+        max-active: 10
+        max-idle: 5
+        min-idle: 1
+    maintenance:
+      enabled: false
+      cleanup-cron: "0 0 * * * *"
+      max-entry-age: 24h
 
+  # ── Session ─────────────────────────────────────────────────────────────────
   session:
     id-prefix: "sess-"
     id-length: 12
-    context-max-size: 1048576
+    context-max-size: 1048576   # 1 MB
+    expiry:
+      enabled: false            # true → auto-expire idle sessions (JPA required)
+      idle-hours: 24
+      check-interval-ms: 3600000
 
+  # ── Virtual Threads ──────────────────────────────────────────────────────────
   virtual-threads:
-    enabled: true
+    enabled: true               # requires Java 21+
 
+  # ── Metrics ──────────────────────────────────────────────────────────────────
+  metrics:
+    enabled: true
+    common-tags:                # applied to all agent.* metrics
+      service: my-agent
+      environment: production
+
+  # ── A2A ──────────────────────────────────────────────────────────────────────
   a2a:
     enabled: false
     connect-timeout: 10s
@@ -532,6 +662,7 @@ agent:
         base-path: /api/agent
         response-timeout: 120s
 
+  # ── LLM ──────────────────────────────────────────────────────────────────────
   llm:
     gateway-base-url: https://api.openai.com
     api-key: ${LLM_API_KEY}
@@ -541,14 +672,81 @@ agent:
     utility-model:
       provider: openai
       model: gpt-4o-mini
+    system-prompts:
+      default: classpath:prompts/system.txt
     ssl:
       trust-all: false
-      ca-path: ${CA_BUNDLE_PATH}
+      ca-path: ${CA_BUNDLE_PATH:}
 ```
 
 ---
 
+## REST Endpoints
+
+`BaseAgentController` provides these endpoints out of the box. Subclass and annotate with `@RestController @RequestMapping` to expose:
+
+| Method   | Path                      | Description                                       |
+|----------|---------------------------|---------------------------------------------------|
+| `POST`   | `/sessions`               | Create a new session                              |
+| `POST`   | `/sessions/{id}/messages` | Send a message (SSE stream)                       |
+| `POST`   | `/sessions/{id}/confirm`  | Confirm or reject a pending mutation (SSE stream) |
+| `POST`   | `/sessions/{id}/resume`   | Resume a paused/failed session                    |
+| `GET`    | `/sessions`               | List sessions (optional `?status=` filter)        |
+| `GET`    | `/sessions/{id}`          | Get session status                                |
+| `GET`    | `/sessions/{id}/audit`    | Get audit trail (optional `?eventType=` filter)   |
+| `DELETE` | `/sessions/{id}`          | Delete a session                                  |
+| `DELETE` | `/sessions`               | Bulk delete sessions                              |
+
+---
+
 ## Extending Agent Core
+
+### RAG — connect any vector store
+
+```java
+@Service
+public class PineconeRetriever implements AgentRetriever {
+
+    @Override
+    public List<RetrievedDocument> retrieve(String query, Map<String, Object> context) {
+        String tenantId = (String) context.getOrDefault("tenantId", "default");
+        return pinecone.query(embed(query), 10)
+                .stream()
+                .map(v -> RetrievedDocument.of(v.getId(), v.getText(), v.getScore()))
+                .toList();
+    }
+}
+// That's all — RagAdvisor is auto-configured when this bean is present
+```
+
+### Custom session expiry scheduler
+
+```java
+@Component
+public class MySessionExpiryScheduler extends BaseSessionExpiryScheduler<MySessionDO> {
+
+    public MySessionExpiryScheduler(MySessionRepository repo) { super(repo); }
+
+    @Override protected long getSessionExpiryHours() { return 12; }
+
+    @Override protected List<String> getExpirableStatuses() {
+        return List.of(SessionStatus.ACTIVE.name());
+    }
+
+    @Override protected String getExpiredStatus() {
+        return SessionStatus.EXPIRED.name();
+    }
+
+    @Override
+    protected void onSessionExpired(MySessionDO session) {
+        sseRegistry.closeEmitter(session.getSessionId()); // custom cleanup
+        super.onSessionExpired(session);
+    }
+
+    @Scheduled(fixedDelayString = "${agent.session.expiry.check-interval-ms:3600000}")
+    public void runExpiry() { expireInactiveSessions(); }
+}
+```
 
 ### Custom store backend (e.g. MongoDB)
 
@@ -559,15 +757,6 @@ public AgentSessionStore<MySession> mongoSessionStore(MongoTemplate mongo) {
 }
 ```
 
-### Custom persona store (e.g. Redis)
-
-```java
-@Bean
-public PersonaStore redisPersonaStore(RedisTemplate<String, PersonaMemory> redis) {
-    return new RedisPersonaStore(redis);
-}
-```
-
 ### Multi-tenant session isolation
 
 ```java
@@ -575,26 +764,45 @@ public PersonaStore redisPersonaStore(RedisTemplate<String, PersonaMemory> redis
 public class HeaderTenantResolver implements TenantResolver {
 
     @Override
-    public String resolveTenantId(HttpServletRequest request) {
+    public String resolve(HttpServletRequest request) {
         return request.getHeader("X-Tenant-ID");
+    }
+}
+```
+
+### Custom advisor
+
+```java
+@Component
+@Order(Ordered.HIGHEST_PRECEDENCE + 15)
+public class TokenBudgetAdvisor implements CallAdvisor {
+
+    @Override
+    public String getName() { return "token-budget-advisor"; }
+
+    @Override
+    public ChatClientResponse adviseCall(
+            ChatClientRequest request, CallAdvisorChain chain) {
+        enforceTokenBudget(request);
+        return chain.nextCall(request);
     }
 }
 ```
 
 ### Advanced reasoning strategies
 
-| Strategy         | Class                    | When to use                           |
-|------------------|--------------------------|---------------------------------------|
-| Least-to-most    | `LeastToMostSolver`      | Multi-step decomposition              |
-| Self-consistency | `SelfConsistencyRunner`  | High-stakes decisions (majority vote) |
-| Tree-of-thoughts | `TreeOfThoughtsExplorer` | Exploratory / creative tasks          |
+| Strategy         | Class                    | When to use                                |
+|------------------|--------------------------|--------------------------------------------|
+| Least-to-most    | `LeastToMostSolver`      | Multi-step decomposition                   |
+| Self-consistency | `SelfConsistencyRunner`  | High-stakes decisions (majority vote)      |
+| Tree-of-thoughts | `TreeOfThoughtsExplorer` | Exploratory / creative tasks               |
 | Decomposition    | `DecomposedPromptRunner` | Complex queries with independent sub-tasks |
 
 ---
 
 ## Test Utilities
 
-`agentcore-store` ships in-memory implementations of all store interfaces for unit and integration tests:
+`agentcore-store` ships in-memory implementations of all store interfaces:
 
 ```java
 @SpringBootTest
@@ -604,8 +812,7 @@ class MyAgentServiceTest {
     @Autowired InMemoryAgentAuditLogStore<MyAuditLog> auditLogStore;
     @Autowired InMemoryToolResultCacheStore<AgentToolResultCacheDO> cacheStore;
 
-    @AfterEach
-    void cleanup() {
+    @AfterEach void cleanup() {
         sessionStore.clear();
         auditLogStore.clear();
         cacheStore.clear();
@@ -613,7 +820,7 @@ class MyAgentServiceTest {
 }
 ```
 
-`MockChatModel` and `SseEventCaptor` are available in `agentcore-llm` (test scope) for unit-testing streaming agents.
+`agentcore-llm` provides `MockChatModel` (returns pre-scripted responses in sequence) and `SseEventCaptor` for asserting on streamed events.
 
 ---
 
@@ -639,13 +846,13 @@ mvn pmd:cpd-check
 
 ### Release
 
-Releases are fully automated via GitHub Actions. Go to **Actions → Release → Run workflow**, pick the bump type (`patch` / `minor` / `major`), and click **Run**. No local steps.
+Releases are fully automated via GitHub Actions. Go to **Actions → Release → Run workflow**, pick the bump type (`patch` / `minor` / `major`), and click **Run**. No local steps required.
 
 ### Code standards
 
 - **Java 21** — prefer records, sealed classes, pattern matching, and virtual threads
 - **Lombok** — use `@Data`, `@SuperBuilder`, `@RequiredArgsConstructor` consistently; never mix `@Builder` and `@SuperBuilder` in an inheritance hierarchy
-- **Javadoc** — all `public` interfaces and classes require Javadoc
+- **Javadoc** — all `public` interfaces and classes require full Javadoc
 - **Static analysis** — SpotBugs + PMD must pass before merging (`mvn verify`)
 - **Tests** — new features require unit tests using in-memory store utilities from `agentcore-store`
 

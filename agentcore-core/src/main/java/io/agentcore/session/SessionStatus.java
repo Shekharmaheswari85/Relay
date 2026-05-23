@@ -32,7 +32,7 @@ package io.agentcore.session;
  * }
  * }</pre>
  *
- * <p>The {@link io.agentcore.scheduler.BaseSessionExpiryScheduler} transitions
+ * <p>The {@code io.agentcore.scheduler.BaseSessionExpiryScheduler} transitions
  * idle {@link #ACTIVE} and {@link #PAUSED} sessions to {@link #EXPIRED}
  * on a configurable schedule.
  */
@@ -64,7 +64,7 @@ public enum SessionStatus {
     FAILED,
 
     /**
-     * The session was closed by the {@link io.agentcore.scheduler.BaseSessionExpiryScheduler}
+     * The session was closed by the {@code io.agentcore.scheduler.BaseSessionExpiryScheduler}
      * because no activity was recorded within the configured idle window.
      * This is a terminal state; no further messages are accepted.
      */

@@ -8,6 +8,8 @@
 package io.agentcore.config;
 
 import java.time.Duration;
+import java.util.LinkedHashMap;
+import java.util.Map;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
@@ -85,6 +87,11 @@ public class AgentCoreProperties {
     private VirtualThreadProperties virtualThreads = new VirtualThreadProperties();
 
     /**
+     * Metrics and observability configuration ({@code agent.metrics.*}).
+     */
+    private MetricsProperties metrics = new MetricsProperties();
+
+    /**
      * Cache backend settings ({@code agent.cache.*}).
      */
     @Data
@@ -109,6 +116,15 @@ public class AgentCoreProperties {
          * Default: {@code "agent:cache:"}.
          */
         private String keyPrefix = "agent:cache:";
+
+        /**
+         * Dedicated time-to-live for tool result cache entries ({@code agent.cache.tool-ttl}).
+         * When set, tool results expire after this duration regardless of the global
+         * {@link #ttl}. When absent ({@code null}), tool results inherit the global TTL.
+         * Accepts standard Spring {@link Duration} notation, e.g., {@code 10m}, {@code 2h}.
+         * Default: {@code null} (inherit global TTL).
+         */
+        private Duration toolTtl;
 
         /**
          * Settings specific to the in-memory cache backend ({@code agent.cache.inmemory.*}).
@@ -256,6 +272,54 @@ public class AgentCoreProperties {
          * Default: 1,048,576 bytes (1 MB).
          */
         private int contextMaxSize = DEFAULT_CONTEXT_MAX_SIZE;
+
+        /**
+         * Automatic session expiry settings ({@code agent.session.expiry.*}).
+         * Disabled by default; set {@code enabled: true} to activate the scheduler.
+         */
+        private ExpiryProperties expiry = new ExpiryProperties();
+    }
+
+    /**
+     * Session expiry scheduler settings ({@code agent.session.expiry.*}).
+     *
+     * <p>When enabled, sessions that have not received any activity for longer than
+     * {@link #idleHours} are automatically transitioned to
+     * {@link io.agentcore.session.SessionStatus#EXPIRED} by
+     * {@link io.agentcore.scheduler.DefaultSessionExpiryScheduler}.
+     *
+     * <pre>{@code
+     * agent:
+     *   session:
+     *     expiry:
+     *       enabled: true
+     *       idle-hours: 24
+     *       check-interval-ms: 3600000
+     * }</pre>
+     */
+    @Data
+    public static class ExpiryProperties {
+
+        /**
+         * Enables the automatic session expiry scheduler.
+         * Requires {@code spring-boot-starter-data-jpa} on the classpath.
+         * Default: {@code false}.
+         */
+        private boolean enabled = false;
+
+        /**
+         * Number of hours of inactivity (no {@code updatedAt} change) after which a
+         * session is considered stale and eligible for expiry.
+         * Default: 24 hours.
+         */
+        private long idleHours = 24;
+
+        /**
+         * How often (in milliseconds) the expiry sweep runs. Measured as a fixed delay
+         * from the completion of the previous run, so overlapping sweeps never occur.
+         * Default: 3,600,000 ms (1 hour).
+         */
+        private long checkIntervalMs = 3_600_000;
     }
 
     /**
@@ -270,5 +334,67 @@ public class AgentCoreProperties {
          * Default: {@code true}.
          */
         private boolean enabled = true;
+    }
+
+    /**
+     * Metrics and observability settings ({@code agent.metrics.*}).
+     *
+     * <p>Controls whether agent metrics are published and allows injecting common tags
+     * into every {@code agent.*} metric for dashboard filtering.
+     *
+     * <pre>{@code
+     * agent:
+     *   metrics:
+     *     enabled: true
+     *     common-tags:
+     *       service: my-order-agent
+     *       environment: production
+     *       region: us-east-1
+     * }</pre>
+     *
+     * <h3>Prometheus scrape endpoint</h3>
+     * <p>Add {@code micrometer-registry-prometheus} to your application POM and expose
+     * the actuator Prometheus endpoint:
+     * <pre>{@code
+     * management:
+     *   endpoints:
+     *     web:
+     *       exposure:
+     *         include: prometheus,health,info
+     *   endpoint:
+     *     prometheus:
+     *       enabled: true
+     * }</pre>
+     *
+     * <h3>DataDog export</h3>
+     * <p>Add {@code micrometer-registry-datadog} and configure:
+     * <pre>{@code
+     * management:
+     *   datadog:
+     *     metrics:
+     *       export:
+     *         api-key: ${DATADOG_API_KEY}
+     *         application-key: ${DATADOG_APP_KEY}
+     *         uri: https://api.datadoghq.com
+     * }</pre>
+     */
+    @Data
+    public static class MetricsProperties {
+
+        /**
+         * Enables or disables agent metric recording.
+         * When {@code false}, the {@code MeterFilter} that applies common tags is not
+         * registered. Individual metrics are still defined but carry no custom tags.
+         * Default: {@code true}.
+         */
+        private boolean enabled = true;
+
+        /**
+         * Key-value pairs added as tags to every {@code agent.*} metric.
+         * Use to distinguish deployments in shared dashboards (e.g., by environment,
+         * service name, or region).
+         * Default: empty (no extra tags).
+         */
+        private Map<String, String> commonTags = new LinkedHashMap<>();
     }
 }

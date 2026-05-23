@@ -18,7 +18,7 @@ import lombok.NoArgsConstructor;
  * Describes an agent's identity, capabilities, and structure for registry and
  * discovery purposes.
  *
- * <p>Instances are typically constructed inside a {@link io.agentcore.executor.AgentExecutor}
+ * <p>Instances are typically constructed inside an {@code io.agentcore.executor.AgentExecutor}
  * implementation's {@code metadata()} method and returned by the registry API so that
  * orchestrators, UIs, and other agents can understand what each agent does and how to
  * route requests to it.

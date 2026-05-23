@@ -14,7 +14,7 @@ import lombok.experimental.SuperBuilder;
 
 /**
  * Concrete response body returned by {@code DELETE /sessions/{sessionId}} in default
- * {@link io.agentcore.executor.AgentExecutor} implementations.
+ * {@code io.agentcore.executor.AgentExecutor} implementations.
  *
  * <p>Extends {@link BaseDeleteSessionResponse} with a {@link #status} field that
  * carries the lifecycle state the session was in at the moment it was deleted

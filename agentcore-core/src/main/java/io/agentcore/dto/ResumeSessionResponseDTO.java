@@ -14,7 +14,7 @@ import lombok.experimental.SuperBuilder;
 
 /**
  * Concrete response body returned by {@code POST /sessions/{sessionId}/resume} in
- * default {@link io.agentcore.executor.AgentExecutor} implementations.
+ * default {@code io.agentcore.executor.AgentExecutor} implementations.
  *
  * <p>Extends {@link BaseResumeSessionResponse} and shadows its
  * {@code resumedFromCheckpoint} field at the DTO layer so that subclasses of this

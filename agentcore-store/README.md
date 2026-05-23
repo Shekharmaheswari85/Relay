@@ -6,11 +6,11 @@ This module defines the storage SPI that the rest of Agent Core writes against. 
 
 ## What's inside
 
-| Package        | Contents                                                                                             |
-|----------------|------------------------------------------------------------------------------------------------------|
-| `store/`       | `AgentSessionStore`, `AgentAuditLogStore`, `ToolResultCacheStore`, and their JPA implementations     |
-| `repository/`  | `BaseAgentSessionRepository`, `BaseAgentAuditLogRepository`, `BaseToolResultCacheRepository`         |
-| `checkpoint/`  | `BaseCheckpointManager`, `BaseChatHistoryManager`, `BaseConfirmationManager`, `BaseSessionStateManager`, `BaseToolResultCacheService` |
+| Package       | Contents                                                                                                                              |
+|---------------|---------------------------------------------------------------------------------------------------------------------------------------|
+| `store/`      | `AgentSessionStore`, `AgentAuditLogStore`, `ToolResultCacheStore`, and their JPA implementations                                      |
+| `repository/` | `BaseAgentSessionRepository`, `BaseAgentAuditLogRepository`, `BaseToolResultCacheRepository`                                          |
+| `checkpoint/` | `BaseCheckpointManager`, `BaseChatHistoryManager`, `BaseConfirmationManager`, `BaseSessionStateManager`, `BaseToolResultCacheService` |
 
 ## Dependency
 

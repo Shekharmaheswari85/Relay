@@ -72,9 +72,9 @@ import lombok.extern.slf4j.Slf4j;
  * @see AgentTool
  * @see ToolCategory
  */
-@Configuration
+@Configuration(proxyBeanMethods = false)
 @Slf4j
-public class AutoDiscoveryToolConfig {
+public final class AutoDiscoveryToolConfig {
 
     private final ApplicationContext applicationContext;
     private final BaseMcpCallInterceptor mcpCallInterceptor;

@@ -13,7 +13,7 @@ package io.agentcore.llm;
  *
  * <p>The tier is the bridge between agent logic and the LLM configuration:
  * each tier maps to a distinct {@link LlmModelConfig} entry in
- * {@link io.agentcore.config.AgentLlmProperties} ({@code reasoning-model} and
+ * {@code AgentLlmProperties} ({@code reasoning-model} and
  * {@code utility-model} respectively). At runtime, {@link ChatClientRegistry}
  * resolves the tier to a pre-built {@link org.springframework.ai.chat.client.ChatClient}.
  *
@@ -59,7 +59,7 @@ package io.agentcore.llm;
  *
  * @see ChatClientRegistry
  * @see LlmModelConfig
- * @see io.agentcore.config.AgentLlmProperties
+ * @see LlmModelConfig
  */
 public enum ModelTier {
 

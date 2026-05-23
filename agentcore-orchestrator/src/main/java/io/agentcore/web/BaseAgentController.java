@@ -22,6 +22,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
+import io.agentcore.advisor.ConfirmationGateAdvisor;
 import io.agentcore.dto.BaseAuditTrailResponse;
 import io.agentcore.dto.BaseBulkDeleteResponse;
 import io.agentcore.dto.BaseCreateSessionRequest;
@@ -29,6 +30,7 @@ import io.agentcore.dto.BaseCreateSessionResponse;
 import io.agentcore.dto.BaseDeleteSessionResponse;
 import io.agentcore.dto.BaseResumeSessionResponse;
 import io.agentcore.dto.BaseSessionStatusResponse;
+import io.agentcore.dto.ConfirmMutationRequest;
 import io.agentcore.dto.SendMessageRequestDTO;
 import io.agentcore.executor.BaseAgentRuntimeService;
 import io.agentcore.model.BaseAgentSession;
@@ -138,6 +140,65 @@ public abstract class BaseAgentController<S extends BaseAgentSession, REQ extend
             } catch (Exception ex) {
                 log.error("Unhandled error in agent pipeline for session {}: {}", sessionId, ex.getMessage(), ex);
                 pipelineEmitter.sendError("Internal error: " + ex.getMessage());
+                pipelineEmitter.complete();
+            }
+        });
+
+        return emitter;
+    }
+
+    // ─── Confirmation gate ────────────────────────────────────────────────────
+
+    /**
+     * Submits a user's confirmation or rejection decision for a pending mutation tool call
+     * and streams the agent's continuation response via SSE.
+     *
+     * <h3>Protocol</h3>
+     * <ol>
+     *   <li>The agent pipeline returns a {@code confirmation_required} SSE event containing
+     *       the pending tool name when {@code ConfirmationGateAdvisor} intercepts a MUTATION
+     *       tool call without existing user approval.</li>
+     *   <li>The UI displays a confirmation prompt to the user.</li>
+     *   <li>The user's decision is posted here. When {@code confirmed=true}, the advisor
+     *       enriches the context with {@code user_confirmed=true} and lets the pipeline
+     *       proceed. When {@code confirmed=false}, the advisor returns a cancellation
+     *       response immediately.</li>
+     * </ol>
+     *
+     * <h3>Example</h3>
+     * <pre>{@code
+     * POST /api/my-agent/sessions/sess-abc123/confirm
+     * Content-Type: application/json
+     * Accept: text/event-stream
+     *
+     * { "toolName": "deleteUser", "confirmed": true }
+     * }</pre>
+     *
+     * @param sessionId the session awaiting confirmation
+     * @param request   the confirmation decision from the user
+     * @return an {@link SseEmitter} that delivers the continuation stream
+     */
+    @PostMapping(value = "/sessions/{sessionId}/confirm", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
+    public SseEmitter confirmMutation(
+            @PathVariable final String sessionId,
+            @RequestBody final ConfirmMutationRequest request) {
+
+        log.info("Mutation confirmation: sessionId={} toolName={} confirmed={}",
+                sessionId, request.getToolName(), request.isConfirmed());
+
+        SseEmitter emitter = new SseEmitter(sseTimeoutMillis());
+        PipelineEmitter pipelineEmitter = new PipelineEmitter(emitter, sessionId);
+
+        String content = request.isConfirmed()
+                ? ConfirmationGateAdvisor.CONFIRM_PREFIX + request.getToolName()
+                : ConfirmationGateAdvisor.REJECT_PREFIX + request.getToolName();
+
+        Thread.ofVirtual().name("agent-confirm-" + sessionId).start(() -> {
+            try {
+                runtimeService.sendMessage(sessionId, content, pipelineEmitter);
+            } catch (Exception ex) {
+                log.error("Error processing confirmation for session {}: {}", sessionId, ex.getMessage(), ex);
+                pipelineEmitter.sendError("Confirmation error: " + ex.getMessage());
                 pipelineEmitter.complete();
             }
         });

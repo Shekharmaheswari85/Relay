@@ -14,7 +14,7 @@ package io.agentcore.llm;
  *
  * <p>{@code LlmModelConfig} is the resolved form of the YAML stanzas
  * {@code agent.llm.reasoning-model} and {@code agent.llm.utility-model}. The auto-configuration
- * in {@link io.agentcore.config.ChatClientAutoConfiguration} reads those stanzas, builds one
+ * in {@code ChatClientAutoConfiguration} reads those stanzas, builds one
  * {@code LlmModelConfig} per configured tier, and stores them in a
  * {@link ChatClientRegistry}.
  *

@@ -17,7 +17,7 @@ import lombok.experimental.SuperBuilder;
 
 /**
  * Concrete audit trail response returned by {@code GET /sessions/{sessionId}/audit}
- * in default {@link io.agentcore.executor.AgentExecutor} implementations.
+ * in default {@code io.agentcore.executor.AgentExecutor} implementations.
  *
  * <p>Extends {@link BaseAuditTrailResponse} and adds {@link #auditEvents}, a parallel
  * list of events whose {@code input} and {@code output} fields are pre-serialised to

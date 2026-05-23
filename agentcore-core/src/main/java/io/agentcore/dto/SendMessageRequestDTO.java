@@ -18,7 +18,7 @@ import lombok.NoArgsConstructor;
  * Server-Sent Event stream.
  *
  * <p>This is the default concrete type accepted by
- * {@link io.agentcore.web.BaseAgentController#sendMessage}.  Agents that need
+ * {@code io.agentcore.web.BaseAgentController#sendMessage}. Agents that need
  * extra message-level fields (e.g. a correlation ID or a locale hint) should
  * extend {@link BaseMessageRequest} instead and override
  * {@code BaseAgentController.sendMessage} to accept the richer type.

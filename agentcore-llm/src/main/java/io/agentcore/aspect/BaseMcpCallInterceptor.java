@@ -82,7 +82,6 @@ import lombok.extern.slf4j.Slf4j;
  * }</pre>
  *
  * @see DefaultMcpCallInterceptor
- * @see io.agentcore.guard.MutationToolGuard
  * @see McpDirectMutationBlockedException
  */
 @Slf4j
