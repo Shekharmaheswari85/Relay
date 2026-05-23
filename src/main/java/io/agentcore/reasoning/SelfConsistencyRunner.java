@@ -1,17 +1,9 @@
 /*
- * Copyright 2024-2025 the original authors.
+ * Copyright 2026 Shekhar Maheswari.
+ * All rights reserved.
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      https://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * This source code is private and proprietary until an explicit open-source
+ * license is published with this project.
  */
 package io.agentcore.reasoning;
 
@@ -21,8 +13,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.stream.Collectors;
 
 import org.springframework.ai.chat.client.ChatClient;
@@ -181,32 +176,44 @@ public class SelfConsistencyRunner {
 
     private List<String> collectSamples(final String prompt) {
         CopyOnWriteArrayList<String> collected = new CopyOnWriteArrayList<>();
-        CountDownLatch latch = new CountDownLatch(sampleCount);
 
-        for (int i = 0; i < sampleCount; i++) {
-            final int sampleIndex = i;
-            Thread.ofVirtual().start(() -> {
-                try {
-                    String response = callLlm(prompt);
-                    if (response != null && !response.isBlank()) {
-                        collected.add(response);
+        try (var executor = Executors.newVirtualThreadPerTaskExecutor()) {
+            List<Future<?>> futures = new ArrayList<>();
+            for (int i = 0; i < sampleCount; i++) {
+                final int sampleIndex = i;
+                futures.add(executor.submit(() -> {
+                    try {
+                        String response = callLlm(prompt);
+                        if (response != null && !response.isBlank()) {
+                            collected.add(response);
+                        }
+                    } catch (Exception ex) {
+                        log.debug("SelfConsistencyRunner: sample {} failed: {}", sampleIndex, ex.getMessage());
                     }
-                } catch (Exception ex) {
-                    log.debug("SelfConsistencyRunner: sample {} failed: {}", sampleIndex, ex.getMessage());
-                } finally {
-                    latch.countDown();
-                }
-            });
-        }
-
-        try {
-            if (!latch.await(timeoutSeconds, TimeUnit.SECONDS)) {
-                log.warn("SelfConsistencyRunner: {} of {} samples completed within timeout",
-                        sampleCount - (int) latch.getCount(), sampleCount);
+                }));
             }
-        } catch (InterruptedException ex) {
-            Thread.currentThread().interrupt();
-            log.warn("SelfConsistencyRunner: interrupted while waiting for samples");
+
+            long endTime = System.currentTimeMillis() + (timeoutSeconds * 1000L);
+            for (var future : futures) {
+                long remaining = endTime - System.currentTimeMillis();
+                try {
+                    if (remaining > 0) {
+                        future.get(remaining, TimeUnit.MILLISECONDS);
+                    } else {
+                        future.cancel(true);
+                    }
+                } catch (TimeoutException ex) {
+                    log.warn("SelfConsistencyRunner: sample collection timed out");
+                    future.cancel(true);
+                } catch (InterruptedException ex) {
+                    Thread.currentThread().interrupt();
+                    log.warn("SelfConsistencyRunner: interrupted while waiting for samples");
+                    futures.forEach(f -> f.cancel(true));
+                    break;
+                } catch (ExecutionException ex) {
+                    log.debug("SelfConsistencyRunner: sample collection failed: {}", ex.getMessage());
+                }
+            }
         }
 
         return new ArrayList<>(collected);

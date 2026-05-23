@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <!--
-    PMD custom ruleset for walmart-agent-core.
+    PMD custom ruleset for agentcore.
 
     Starts from the standard category rulesets and excludes rules that produce
     unavoidable false positives in a Spring Boot framework library:

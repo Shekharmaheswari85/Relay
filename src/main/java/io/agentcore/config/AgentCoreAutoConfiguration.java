@@ -1,17 +1,9 @@
 /*
- * Copyright 2024-2025 the original authors.
+ * Copyright 2026 Shekhar Maheswari.
+ * All rights reserved.
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      https://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * This source code is private and proprietary until an explicit open-source
+ * license is published with this project.
  */
 package io.agentcore.config;
 
@@ -25,8 +17,8 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Import;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.StringRedisTemplate;
@@ -34,13 +26,20 @@ import org.springframework.data.redis.serializer.RedisSerializer;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.agentcore.a2a.AgentCardController;
+import io.agentcore.a2a.AgentClientRegistry;
+import io.agentcore.advisor.ConfirmationGateAdvisor;
+import io.agentcore.aspect.DefaultMcpCallInterceptor;
 import io.agentcore.cache.AgentCache;
 import io.agentcore.cache.DefaultToolResultCache;
 import io.agentcore.cache.InMemoryAgentCache;
+import io.agentcore.cache.LocalToolDedupCache;
 import io.agentcore.cache.RedisAgentCache;
 import io.agentcore.cache.RedisToolDedupCache;
 import io.agentcore.cache.ToolDedupCache;
 import io.agentcore.cache.ToolResultCache;
+import io.agentcore.executor.AgentRegistry;
+import io.agentcore.filter.McpSseAuthFilter;
 import io.agentcore.memory.AgentMemoryManager;
 import io.agentcore.memory.InMemoryAgentMemoryManager;
 import io.agentcore.memory.entity.EntityMemoryStore;
@@ -48,15 +47,23 @@ import io.agentcore.memory.entity.InMemoryEntityMemoryStore;
 import io.agentcore.memory.persona.InMemoryPersonaStore;
 import io.agentcore.memory.persona.PersonaStore;
 import io.agentcore.model.AgentToolResultCacheDO;
+import io.agentcore.observability.AgentObservabilityService;
+import io.agentcore.prompt.ClasspathPromptRepository;
 import io.agentcore.prompt.PromptLoader;
 import io.agentcore.repository.AgentToolResultCacheRepository;
+import io.agentcore.session.SessionContextManager;
 import io.agentcore.store.AgentAuditLogStore;
 import io.agentcore.store.AgentSessionStore;
 import io.agentcore.store.JpaAgentAuditLogStore;
 import io.agentcore.store.JpaAgentSessionStore;
 import io.agentcore.store.JpaToolResultCacheStore;
 import io.agentcore.store.ToolResultCacheStore;
+import io.agentcore.stream.SseStreamHandler;
+import io.agentcore.stream.ToolProgressPublisher;
+import io.agentcore.summary.DefaultSummaryPromptProvider;
+import io.agentcore.thread.VirtualThreadTaskExecutorUtil;
 import io.agentcore.tool.DefaultToolTierRegistry;
+import io.agentcore.tool.ToolExecutionSupport;
 import io.agentcore.tool.ToolTierRegistry;
 
 import lombok.RequiredArgsConstructor;
@@ -79,7 +86,23 @@ import lombok.extern.slf4j.Slf4j;
  */
 @AutoConfiguration
 @EnableConfigurationProperties({AgentCoreProperties.class, AgentLlmProperties.class})
-@ComponentScan(basePackages = "io.agentcore")
+@Import({
+        AgentCardController.class,
+        AgentClientRegistry.AutoConfig.class,
+        AgentRegistry.class,
+        AgentObservabilityService.class,
+        ClasspathPromptRepository.class,
+        ConfirmationGateAdvisor.class,
+        DefaultMcpCallInterceptor.class,
+        DefaultSummaryPromptProvider.class,
+        LocalToolDedupCache.class,
+        McpSseAuthFilter.class,
+        SessionContextManager.class,
+        SseStreamHandler.class,
+        ToolExecutionSupport.class,
+        ToolProgressPublisher.class,
+        VirtualThreadTaskExecutorUtil.class
+})
 @RequiredArgsConstructor
 @Slf4j
 public class AgentCoreAutoConfiguration {

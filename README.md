@@ -7,7 +7,7 @@
 [![Java 21](https://img.shields.io/badge/Java-21-orange?logo=openjdk)](https://openjdk.org/projects/jdk/21/)
 [![Spring Boot 3.4](https://img.shields.io/badge/Spring%20Boot-3.4.1-6db33f?logo=springboot)](https://spring.io/projects/spring-boot)
 [![Spring AI 1.0](https://img.shields.io/badge/Spring%20AI-1.0.0-6db33f)](https://spring.io/projects/spring-ai)
-[![License](https://img.shields.io/badge/License-Apache%202.0-blue)](LICENSE)
+[![License](https://img.shields.io/badge/License-private-lightgrey)](LICENSE)
 
 Agent Core is a Spring Boot library that gives you the batteries-included scaffolding to build, run, and scale production AI agents — without writing the same boilerplate every time.
 
@@ -964,8 +964,9 @@ agent:
       my-agent: prompts/my-agent-system-prompt.txt
 
     ssl:
-      trust-all: false               # DEVELOPMENT ONLY — never use in production
-      ca-path: ${CA_BUNDLE_PATH}     # path to custom CA bundle (PEM)
+      trust-all: false                       # disables TLS validation; local development only
+      allow-insecure-trust-all: false        # must also be true when trust-all is true
+      ca-path: ${CA_BUNDLE_PATH}             # path to custom CA bundle (PEM)
 ```
 
 ---
@@ -1122,14 +1123,8 @@ Exclusion rules live in `spotbugs-exclude.xml` and `pmd-ruleset.xml`. Edit those
 
 ## License
 
-Agent Core is released under the [Apache License, Version 2.0](LICENSE).
+Agent Core is currently a private personal project.
 
-```
-Copyright 2024-2025 the original authors.
+Copyright 2026 Shekhar Maheswari. All rights reserved.
 
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-    https://www.apache.org/licenses/LICENSE-2.0
-```
+An explicit open-source license will be added when the project is ready for public release.

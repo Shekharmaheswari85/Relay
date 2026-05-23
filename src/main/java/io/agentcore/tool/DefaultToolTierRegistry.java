@@ -1,17 +1,9 @@
 /*
- * Copyright 2024-2025 the original authors.
+ * Copyright 2026 Shekhar Maheswari.
+ * All rights reserved.
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      https://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * This source code is private and proprietary until an explicit open-source
+ * license is published with this project.
  */
 package io.agentcore.tool;
 
@@ -21,6 +13,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import org.springframework.ai.tool.annotation.Tool;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.context.ApplicationContext;
+import org.springframework.core.annotation.AnnotatedElementUtils;
 import org.springframework.stereotype.Component;
 
 import io.agentcore.llm.ModelTier;
@@ -101,10 +94,9 @@ public class DefaultToolTierRegistry implements ToolTierRegistry {
             initialized = true;
         }
     }
-
     private void scanAgentTools() {
         applicationContext.getBeansWithAnnotation(AgentTool.class).forEach((beanName, bean) -> {
-            AgentTool annotation = bean.getClass().getAnnotation(AgentTool.class);
+            AgentTool annotation = AnnotatedElementUtils.findMergedAnnotation(bean.getClass(), AgentTool.class);
             if (annotation == null) {
                 return;
             }

@@ -1,17 +1,9 @@
 /*
- * Copyright 2024-2025 the original authors.
+ * Copyright 2026 Shekhar Maheswari.
+ * All rights reserved.
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      https://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * This source code is private and proprietary until an explicit open-source
+ * license is published with this project.
  */
 package io.agentcore.session;
 
@@ -20,10 +12,10 @@ package io.agentcore.session;
  * to final disposition.
  *
  * <p>Transitions follow a directed graph: a session starts as {@link #ACTIVE},
- * may be temporarily halted as {@link #PAUSED}, and eventually reaches one of
- * the three terminal states — {@link #COMPLETED}, {@link #FAILED}, or
- * {@link #EXPIRED}. Terminal sessions are immutable; no further messages are
- * accepted and no state transitions are permitted.
+ * may be temporarily halted as {@link #PAUSED}, may enter {@link #FAILED} after
+ * an unrecoverable turn error, and eventually reaches one of the terminal states:
+ * {@link #COMPLETED} or {@link #EXPIRED}. Terminal sessions are immutable; no
+ * further messages are accepted and no state transitions are permitted.
  *
  * <p>Use {@link #isTerminal()} as a guard before routing a new user message:
  * <pre>{@code
@@ -32,8 +24,8 @@ package io.agentcore.session;
  * }
  * }</pre>
  *
- * <p>Use {@link #canResume()} to determine whether a paused session may be
- * re-activated:
+ * <p>Use {@link #canResume()} to determine whether a paused or failed session may
+ * be re-activated:
  * <pre>{@code
  * if (session.getStatusEnum().canResume()) {
  *     session.setStatus(SessionStatus.ACTIVE.name());
@@ -66,8 +58,8 @@ public enum SessionStatus {
     COMPLETED,
 
     /**
-     * The agent encountered an unrecoverable error and the session was abandoned.
-     * This is a terminal state; no further messages are accepted.
+     * The agent encountered an unrecoverable error. The session does not accept
+     * new messages until it is resumed from its last checkpoint.
      */
     FAILED,
 
@@ -82,15 +74,14 @@ public enum SessionStatus {
      * Returns {@code true} when this status represents a terminal state from
      * which the session cannot transition further.
      *
-     * <p>Terminal statuses are {@link #COMPLETED}, {@link #FAILED}, and
-     * {@link #EXPIRED}. Use this as a guard before routing new user messages
-     * or modifying session state.
+     * <p>Terminal statuses are {@link #COMPLETED} and {@link #EXPIRED}. Use this
+     * as a guard before routing new user messages or modifying session state.
      *
-     * @return {@code true} for {@code COMPLETED}, {@code FAILED}, and
-     *         {@code EXPIRED}; {@code false} otherwise
+     * @return {@code true} for {@code COMPLETED} and {@code EXPIRED};
+     *         {@code false} otherwise
      */
     public boolean isTerminal() {
-        return this == COMPLETED || this == FAILED || this == EXPIRED;
+        return this == COMPLETED || this == EXPIRED;
     }
 
     /**
@@ -104,12 +95,21 @@ public enum SessionStatus {
     }
 
     /**
-     * Returns {@code true} when the session is {@link #PAUSED} and may be
-     * transitioned back to {@link #ACTIVE}.
+     * Returns {@code true} when the session may be transitioned back to
+     * {@link #ACTIVE}.
      *
-     * @return {@code true} only for {@code PAUSED}
+     * @return {@code true} for {@code PAUSED} and {@code FAILED}
      */
     public boolean canResume() {
-        return this == PAUSED;
+        return this == PAUSED || this == FAILED;
+    }
+
+    /**
+     * Returns {@code true} if a session in this status accepts user messages.
+     *
+     * @return {@code true} only for {@code ACTIVE}
+     */
+    public boolean allowsMessages() {
+        return this == ACTIVE;
     }
 }

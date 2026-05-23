@@ -1,17 +1,9 @@
 /*
- * Copyright 2024-2025 the original authors.
+ * Copyright 2026 Shekhar Maheswari.
+ * All rights reserved.
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      https://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * This source code is private and proprietary until an explicit open-source
+ * license is published with this project.
  */
 package io.agentcore.config;
 
@@ -20,11 +12,9 @@ import org.springframework.util.MultiValueMap;
 /**
  * SPI for injecting gateway-specific HTTP headers into every LLM API request.
  *
- * <p>Different LLM gateways require different audit, routing, or identity headers —
- * for example, the Walmart LLM Gateway requires {@code WM_LLM_GW.USER_TYPE},
- * {@code WM_LLM_GW.USER_NAME}, and optionally {@code WM_LLM_GW.USER_AGENT} and
- * {@code WM_LLM_GW.USER_IP}.  This interface lets teams inject those headers without
- * modifying core auto-configuration.
+ * <p>Different LLM gateways require different audit, routing, or identity headers.
+ * This interface lets applications inject those headers without modifying core
+ * auto-configuration.
  *
  * <h3>How it is called</h3>
  * <p>{@link ChatClientAutoConfiguration} discovers all {@code LlmGatewayHeadersContributor}
@@ -36,21 +26,21 @@ import org.springframework.util.MultiValueMap;
  * appropriate when connecting directly to OpenAI or a gateway that does not require audit
  * headers.
  *
- * <h3>Walmart LLM Gateway example</h3>
+ * <h3>Custom gateway example</h3>
  * <pre>{@code
  * @Component
- * public class WalmartGatewayHeadersContributor implements LlmGatewayHeadersContributor {
+ * public class CustomGatewayHeadersContributor implements LlmGatewayHeadersContributor {
  *
  *     @Override
  *     public void contribute(MultiValueMap<String, String> headers,
  *                            AgentLlmProperties.AuditConfig audit) {
- *         headers.set("WM_LLM_GW.USER_TYPE", audit.getUserType());
- *         headers.set("WM_LLM_GW.USER_NAME", audit.getUserName());
+ *         headers.set("X-User-Type", audit.getUserType());
+ *         headers.set("X-User-Name", audit.getUserName());
  *         if (audit.getUserAgent() != null && !audit.getUserAgent().isBlank()) {
- *             headers.set("WM_LLM_GW.USER_AGENT", audit.getUserAgent());
+ *             headers.set("X-User-Agent", audit.getUserAgent());
  *         }
  *         if (audit.getUserIp() != null && !audit.getUserIp().isBlank()) {
- *             headers.set("WM_LLM_GW.USER_IP", audit.getUserIp());
+ *             headers.set("X-User-IP", audit.getUserIp());
  *         }
  *     }
  * }

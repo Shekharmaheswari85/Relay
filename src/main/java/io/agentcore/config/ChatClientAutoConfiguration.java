@@ -1,17 +1,9 @@
 /*
- * Copyright 2024-2025 the original authors.
+ * Copyright 2026 Shekhar Maheswari.
+ * All rights reserved.
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      https://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * This source code is private and proprietary until an explicit open-source
+ * license is published with this project.
  */
 package io.agentcore.config;
 
@@ -74,7 +66,7 @@ import lombok.extern.slf4j.Slf4j;
  *   <li>Auto-discovers {@link ToolCallbackProvider} and registers tools</li>
  *   <li>Auto-discovers {@link AgentSystemPromptProvider} for system prompts</li>
  *   <li>Supports multiple providers with runtime switching</li>
- *   <li>Handles Walmart LLM Gateway SSL and audit headers</li>
+ *   <li>Handles custom LLM gateway SSL and audit headers</li>
  * </ul>
  *
  * <h3>Customization</h3>
@@ -192,7 +184,7 @@ public class ChatClientAutoConfiguration {
         MultiValueMap<String, String> headers = provider.buildHeaders(apiKey, modelConfig.apiVersion());
 
         // Add gateway-specific audit/routing headers via pluggable SPI.
-        // Provide a LlmGatewayHeadersContributor bean to inject headers (e.g. WM_LLM_GW.*).
+        // Provide a LlmGatewayHeadersContributor bean to inject gateway-specific headers.
         if (gatewayHeadersContributor != null) {
             AgentLlmProperties.AuditConfig audit = properties.getAudit();
             gatewayHeadersContributor.contribute(headers, audit);
@@ -238,10 +230,11 @@ public class ChatClientAutoConfiguration {
     private WebClient.Builder buildWebClientBuilder(final String apiVersion) {
         try {
             AgentLlmProperties.SslConfig ssl = properties.getSsl();
+            validateSslConfig(ssl);
 
             SSLContext sslContext;
             if (ssl.isTrustAll()) {
-                log.warn("LLM gateway SSL trust-all mode enabled (development only)");
+                log.warn("LLM gateway SSL trust-all mode enabled. Use only for local development.");
                 sslContext = SSLContextBuilder.create()
                         .loadTrustMaterial(null, (chain, authType) -> true)
                         .build();
@@ -284,6 +277,7 @@ public class ChatClientAutoConfiguration {
     private RestClient.Builder buildRestClientBuilder() {
         try {
             AgentLlmProperties.SslConfig ssl = properties.getSsl();
+            validateSslConfig(ssl);
 
             SSLContext sslContext = ssl.isTrustAll()
                     ? SSLContextBuilder.create()
@@ -306,6 +300,15 @@ public class ChatClientAutoConfiguration {
                     .requestFactory(new HttpComponentsClientHttpRequestFactory(Objects.requireNonNull(httpClient, "HTTP client must not be null")));
         } catch (Exception ex) {
             throw new IllegalStateException("Failed to configure LLM gateway RestClient SSL", ex);
+        }
+    }
+
+    private void validateSslConfig(final AgentLlmProperties.SslConfig ssl) {
+        if (ssl.isTrustAll() && !ssl.isAllowInsecureTrustAll()) {
+            throw new IllegalStateException(
+                    "agent.llm.ssl.trust-all=true disables TLS certificate and hostname verification. "
+                            + "For local development only, also set "
+                            + "agent.llm.ssl.allow-insecure-trust-all=true to acknowledge this risk.");
         }
     }
 
