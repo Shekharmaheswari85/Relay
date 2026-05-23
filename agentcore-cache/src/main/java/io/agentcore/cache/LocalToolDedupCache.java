@@ -52,10 +52,10 @@ public class LocalToolDedupCache implements ToolDedupCache {
             if (this == other) {
                 return true;
             }
-            if (!(other instanceof CacheEntry cacheEntry)) {
+            if (!(other instanceof CacheEntry(byte[] otherValue, long otherExpiresAtMs))) {
                 return false;
             }
-            return expiresAtMs == cacheEntry.expiresAtMs && Arrays.equals(value, cacheEntry.value);
+            return expiresAtMs == otherExpiresAtMs && Arrays.equals(value, otherValue);
         }
 
         @Override
