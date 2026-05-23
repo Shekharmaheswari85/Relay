@@ -7,11 +7,11 @@ name: Release
 #   1. Reads current version from pom.xml  (e.g. 1.0.4-SNAPSHOT)
 #   2. Strips -SNAPSHOT                    (→ 1.0.4)
 #   3. Builds & verifies (SpotBugs + PMD)
-#   4. Publishes release artifact to GitHub Packages
+#   4. Publishes release artifact to GitHub Packages  (skip if re-running after partial failure)
 #   5. Commits release version to main
 #   6. Tags  v1.0.4
 #   7. Bumps pom.xml to next SNAPSHOT      (→ 1.0.5-SNAPSHOT)
-#   8. Commits + pushes everything to main
+#   8. Rebases on any commits that landed during the build, pushes
 #   9. Creates GitHub Release with auto-generated notes
 
 on:
@@ -26,6 +26,11 @@ on:
           - patch
           - minor
           - major
+      skip_publish:
+        description: 'Skip artifact publish (use when re-running after a partial failure where artifact was already published)'
+        required: false
+        default: false
+        type: boolean
 
 jobs:
   release:
@@ -95,6 +100,7 @@ jobs:
 
       # ── Publish artifact ─────────────────────────────────────────────────
       - name: Publish ${{ steps.ver.outputs.release }} to GitHub Packages
+        if: ${{ inputs.skip_publish != true }}
         run: |
           mvn -B flatten:flatten deploy \
             -DskipTests \
@@ -102,6 +108,10 @@ jobs:
             -s "$GITHUB_WORKSPACE/settings.xml"
         env:
           GITHUB_TOKEN: ${{ github.token }}
+
+      - name: Skip publish (artifact already published)
+        if: ${{ inputs.skip_publish == true }}
+        run: echo "Skipping publish — artifact ${{ steps.ver.outputs.release }} already exists in GitHub Packages."
 
       # ── Commit, tag, bump, push ──────────────────────────────────────────
       - name: Commit release, tag, bump to next SNAPSHOT, push
@@ -122,7 +132,8 @@ jobs:
           git add pom.xml
           git commit -m "chore: prepare next development iteration ${NEXT} [skip ci]"
 
-          # Push commits + tag
+          # Rebase on any commits that landed during the build, then push
+          git pull --rebase origin main
           git push origin main
           git push origin "${TAG}"
 
