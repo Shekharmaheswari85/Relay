@@ -1,0 +1,2 @@
+io.agentcore.config.AgentCoreAutoConfiguration
+io.agentcore.config.ChatClientAutoConfiguration
