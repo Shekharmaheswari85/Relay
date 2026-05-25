@@ -30,7 +30,6 @@ import java.util.List;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.micrometer.core.instrument.Meter;
-import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Tag;
 import io.micrometer.core.instrument.config.MeterFilter;
 import io.relay.a2a.AgentCardController;
@@ -62,6 +61,8 @@ import io.relay.observability.AgentObservabilityService;
 import io.relay.prompt.ClasspathPromptRepository;
 import io.relay.prompt.PromptLoader;
 import io.relay.repository.AgentToolResultCacheRepository;
+import io.relay.repository.BaseAgentAuditLogRepository;
+import io.relay.repository.BaseAgentSessionRepository;
 import io.relay.session.SessionContextManager;
 import io.relay.store.AgentAuditLogStore;
 import io.relay.store.AgentSessionStore;
@@ -445,7 +446,7 @@ public class RelayAutoConfiguration {
         @ConditionalOnBean(name = "agentSessionRepository")
         @ConditionalOnMissingBean(BaseSessionExpiryScheduler.class)
         public DefaultSessionExpiryScheduler defaultSessionExpiryScheduler(
-                final io.relay.repository.BaseAgentSessionRepository<?> agentSessionRepository,
+                final BaseAgentSessionRepository<?> agentSessionRepository,
                 final RelayProperties properties) {
             long idleHours = properties.getSession().getExpiry().getIdleHours();
             return new DefaultSessionExpiryScheduler(agentSessionRepository, idleHours);
@@ -481,7 +482,7 @@ public class RelayAutoConfiguration {
         @ConditionalOnBean(name = "agentSessionRepository")
         @ConditionalOnMissingBean(AgentSessionStore.class)
         public AgentSessionStore<?> jpaAgentSessionStore(
-                final io.relay.repository.BaseAgentSessionRepository<?> repository) {
+                final BaseAgentSessionRepository<?> repository) {
             return new JpaAgentSessionStore<>(repository);
         }
 
@@ -496,7 +497,7 @@ public class RelayAutoConfiguration {
         @ConditionalOnBean(name = "agentAuditLogRepository")
         @ConditionalOnMissingBean(AgentAuditLogStore.class)
         public AgentAuditLogStore<?> jpaAgentAuditLogStore(
-                final io.relay.repository.BaseAgentAuditLogRepository<?> repository) {
+                final BaseAgentAuditLogRepository<?> repository) {
             return new JpaAgentAuditLogStore<>(repository);
         }
 

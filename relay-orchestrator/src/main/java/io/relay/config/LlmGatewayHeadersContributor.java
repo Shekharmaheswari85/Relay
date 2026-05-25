@@ -20,7 +20,11 @@ import org.springframework.util.MultiValueMap;
  * <p>{@link ChatClientAutoConfiguration} discovers all {@code LlmGatewayHeadersContributor}
  * beans in the application context and calls {@link #contribute} once per request on each
  * one, passing a mutable headers map and the audit configuration from
- * {@code agent.llm.audit.*}.  Contributors can add any number of headers.
+ * {@code relay.llm.audit.*}. Contributors can add any number of headers.
+ *
+ * <p>Contributors are invoked after provider defaults and configured custom headers
+ * (`relay.llm.custom-headers` and per-model `headers`). This makes contributors the
+ * final override layer for header values.
  *
  * <p>When no bean of this type is registered, no extra headers are added — which is
  * appropriate when connecting directly to OpenAI or a gateway that does not require audit
@@ -65,11 +69,11 @@ public interface LlmGatewayHeadersContributor {
      * Populates the mutable HTTP headers map with gateway-specific headers.
      *
      * <p>Callers pass the same {@code headers} map to all registered contributors in
-     * sequence.  Each contributor should add only its own headers and leave existing
-     * entries intact.
+     * sequence. Each contributor can add new values or intentionally override existing
+     * keys when needed.
      *
      * @param headers the mutable multi-value map to populate; never null
-     * @param audit   the audit identity configuration read from {@code agent.llm.audit.*};
+     * @param audit   the audit identity configuration read from {@code relay.llm.audit.*};
      *                never null
      */
     void contribute(MultiValueMap<String, String> headers, AgentLlmProperties.AuditConfig audit);

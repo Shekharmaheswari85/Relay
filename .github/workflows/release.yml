@@ -15,6 +15,9 @@ name: Release
 #   9. Creates GitHub Release with auto-generated notes
 
 on:
+  push:
+    branches:
+      - main
   workflow_dispatch:
     inputs:
       bump_type:
@@ -34,6 +37,7 @@ on:
 
 jobs:
   release:
+    if: github.actor != 'github-actions[bot]'
     name: Bump → Build → Publish → Release
     runs-on: ubuntu-latest
     permissions:

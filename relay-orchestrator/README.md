@@ -203,6 +203,47 @@ public class MyExpiryScheduler extends BaseSessionExpiryScheduler<MySessionDO> {
 }
 ```
 
+## Custom LLM Headers
+
+Relay supports custom outbound headers at both global and per-model levels.
+
+```yaml
+relay:
+  llm:
+    custom-headers:
+      X-TENANT-ID: self-serve
+      X-PLATFORM: smart-serve-agent
+
+    reasoning-model:
+      provider: openai
+      model: gpt-5.2
+      version: "2025-12-11"
+      api-version: "2025-04-01-preview"
+      headers:
+        X-CLIENT-ID: onboarding-reasoning
+
+    utility-model:
+      provider: openai
+      model: gpt-5.2-mini
+      headers:
+        X-CLIENT-ID: onboarding-utility
+
+    providers:
+      - provider: anthropic
+        model: claude-sonnet-4
+        headers:
+          X-CLIENT-ID: onboarding-anthropic
+```
+
+Header merge order (lowest to highest precedence):
+
+1. Provider auth/default headers from `LlmProvider`
+2. `relay.llm.custom-headers` (global)
+3. Per-model `headers` (reasoning / utility / providers[])
+4. `LlmGatewayHeadersContributor` beans (final override layer)
+
+If the same key appears multiple times, the later layer overrides the earlier value.
+
 ## Agent-to-Agent (A2A) Communication
 
 HTTP-native protocol for multi-agent fan-out with SSE and JSON support.

@@ -109,6 +109,14 @@ public class AgentLlmProperties {
     private int maxTokens = 4096;
 
     /**
+     * Additional static headers applied to all LLM requests.
+     *
+     * <p>Useful for gateway-specific tenant/routing headers that should be present
+     * regardless of provider/model selection.
+     */
+    private Map<String, String> customHeaders = new HashMap<>();
+
+    /**
      * Model coordinates for the {@link io.relay.llm.ModelTier#REASONING} tier.
      * Used by {@code ChatClientAutoConfiguration} to build the high-capability client.
      * At minimum, set {@code provider}, {@code model}, and (for OpenAI) {@code version}
@@ -211,6 +219,14 @@ public class AgentLlmProperties {
          * unless a custom path strategy is used.
          */
         private String apiVersion;
+
+        /**
+         * Additional static headers applied for this specific provider/model configuration.
+         *
+         * <p>These override any same-name keys from {@link AgentLlmProperties#customHeaders}
+         * for requests sent via this model configuration.
+         */
+        private Map<String, String> headers = new HashMap<>();
     }
 
     /**
