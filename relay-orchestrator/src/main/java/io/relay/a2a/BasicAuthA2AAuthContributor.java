@@ -109,7 +109,9 @@ public final class BasicAuthA2AAuthContributor implements A2AAuthContributor {
     public void contribute(final HttpHeaders headers, final String agentName) {
         Credentials creds = credentialsByAgent.get(agentName);
         if (creds != null) {
-            headers.setBasicAuth(creds.username(), creds.password());
+            String username = Objects.requireNonNull(creds.username(), "username must not be null");
+            String password = Objects.requireNonNull(creds.password(), "password must not be null");
+            headers.setBasicAuth(username, password);
             log.debug("Applied Basic auth for A2A agent: {}", agentName);
         }
     }

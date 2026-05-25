@@ -99,8 +99,10 @@ public final class ApiKeyA2AAuthContributor implements A2AAuthContributor {
     public void contribute(final HttpHeaders headers, final String agentName) {
         String apiKey = apiKeysByAgent.get(agentName);
         if (apiKey != null && !apiKey.isBlank()) {
-            headers.set(headerName, apiKey);
-            log.debug("Applied API key header '{}' for A2A agent: {}", headerName, agentName);
+            String safeHeaderName = Objects.requireNonNull(headerName, "headerName must not be null");
+            String key = Objects.requireNonNull(apiKey, "apiKey must not be null");
+            headers.set(safeHeaderName, key);
+            log.debug("Applied API key header '{}' for A2A agent: {}", safeHeaderName, agentName);
         }
     }
 }

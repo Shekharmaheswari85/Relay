@@ -85,11 +85,11 @@ public class ChatClientAutoConfiguration {
      * Optional gateway headers contributor — pluggable SPI for injecting provider-specific
      * audit/routing headers. When no bean is defined, no extra headers are added.
      */
-    private LlmGatewayHeadersContributor gatewayHeadersContributor;
+    private List<LlmGatewayHeadersContributor> gatewayHeadersContributors = List.of();
 
     @Autowired(required = false)
-    public void setGatewayHeadersContributor(final LlmGatewayHeadersContributor gatewayHeadersContributor) {
-        this.gatewayHeadersContributor = gatewayHeadersContributor;
+    public void setGatewayHeadersContributors(final List<LlmGatewayHeadersContributor> gatewayHeadersContributors) {
+        this.gatewayHeadersContributors = gatewayHeadersContributors != null ? gatewayHeadersContributors : List.of();
     }
 
     @Bean
@@ -113,14 +113,28 @@ public class ChatClientAutoConfiguration {
         }
         LlmModelConfig reasoningConfig = toLlmModelConfig(properties.getReasoningModel());
         logModelConfig("reasoning-model", reasoningConfig);
-        ChatClient reasoningClient = buildChatClient(baseUrl, apiKey, reasoningConfig, tools, advisors, systemPrompt);
+        ChatClient reasoningClient = buildChatClient(
+                baseUrl,
+                apiKey,
+                reasoningConfig,
+                properties.getReasoningModel().getHeaders(),
+                tools,
+                advisors,
+                systemPrompt);
 
         // Build utility client (optional)
         ChatClient utilityClient = null;
         if (properties.getUtilityModel() != null) {
             LlmModelConfig utilityConfig = toLlmModelConfig(properties.getUtilityModel());
             logModelConfig("utility-model", utilityConfig);
-            utilityClient = buildChatClient(baseUrl, apiKey, utilityConfig, tools, advisors, systemPrompt);
+            utilityClient = buildChatClient(
+                    baseUrl,
+                    apiKey,
+                    utilityConfig,
+                    properties.getUtilityModel().getHeaders(),
+                    tools,
+                    advisors,
+                    systemPrompt);
         }
 
         // Build provider-specific clients for runtime switching
@@ -133,7 +147,16 @@ public class ChatClientAutoConfiguration {
                 if (!providerClients.containsKey(provider)) {
                     LlmModelConfig config = toLlmModelConfig(providerConfig);
                     logModelConfig("provider[" + provider + "]", config);
-                    providerClients.put(provider, buildChatClient(baseUrl, apiKey, config, tools, advisors, systemPrompt));
+                    providerClients.put(
+                            provider,
+                            buildChatClient(
+                                    baseUrl,
+                                    apiKey,
+                                    config,
+                                    providerConfig.getHeaders(),
+                                    tools,
+                                    advisors,
+                                    systemPrompt));
                 }
             }
         }
@@ -151,11 +174,12 @@ public class ChatClientAutoConfiguration {
             final String baseUrl,
             final String apiKey,
             final LlmModelConfig modelConfig,
+            final Map<String, String> modelHeaders,
             final ToolCallbackProvider tools,
             final List<Advisor> advisors,
             final String systemPrompt) {
 
-        OpenAiChatModel chatModel = buildChatModel(baseUrl, apiKey, modelConfig);
+        OpenAiChatModel chatModel = buildChatModel(baseUrl, apiKey, modelConfig, modelHeaders);
 
         ChatClient.Builder builder = ChatClient.builder(Objects.requireNonNull(chatModel, "Chat model must not be null"))
                 .defaultOptions(Objects.requireNonNull(buildModelOptions(modelConfig), "Chat options must not be null"));
@@ -178,16 +202,21 @@ public class ChatClientAutoConfiguration {
     private OpenAiChatModel buildChatModel(
             final String baseUrl,
             final String apiKey,
-            final LlmModelConfig modelConfig) {
+            final LlmModelConfig modelConfig,
+            final Map<String, String> modelHeaders) {
 
         LlmProvider provider = modelConfig.provider();
         MultiValueMap<String, String> headers = provider.buildHeaders(apiKey, modelConfig.apiVersion());
+        addCustomHeaders(headers, properties.getCustomHeaders());
+        addCustomHeaders(headers, modelHeaders);
 
         // Add gateway-specific audit/routing headers via pluggable SPI.
         // Provide a LlmGatewayHeadersContributor bean to inject gateway-specific headers.
-        if (gatewayHeadersContributor != null) {
+        if (!gatewayHeadersContributors.isEmpty()) {
             AgentLlmProperties.AuditConfig audit = properties.getAudit();
-            gatewayHeadersContributor.contribute(headers, audit);
+            for (LlmGatewayHeadersContributor contributor : gatewayHeadersContributors) {
+                contributor.contribute(headers, audit);
+            }
         }
 
         String completionsPath = modelConfig.resolveCompletionsPath();
@@ -205,6 +234,17 @@ public class ChatClientAutoConfiguration {
                 .openAiApi(openAiApi)
                 .defaultOptions(buildModelOptions(modelConfig))
                 .build();
+    }
+
+    private void addCustomHeaders(final MultiValueMap<String, String> target, final Map<String, String> customHeaders) {
+        if (customHeaders == null || customHeaders.isEmpty()) {
+            return;
+        }
+        customHeaders.forEach((key, value) -> {
+            if (key != null && !key.isBlank() && value != null && !value.isBlank()) {
+                target.set(key, value);
+            }
+        });
     }
 
     private OpenAiChatOptions buildModelOptions(final LlmModelConfig modelConfig) {

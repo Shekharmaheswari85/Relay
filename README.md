@@ -666,18 +666,34 @@ agent:
   llm:
     gateway-base-url: https://api.openai.com
     api-key: ${LLM_API_KEY}
+    custom-headers:
+      X-TENANT-ID: my-tenant
+      X-PLATFORM: my-agent
     reasoning-model:
       provider: openai
       model: gpt-4o
+      headers:
+        X-CLIENT-ID: reasoning-client
     utility-model:
       provider: openai
       model: gpt-4o-mini
+      headers:
+        X-CLIENT-ID: utility-client
     system-prompts:
       default: classpath:prompts/system.txt
     ssl:
       trust-all: false
       ca-path: ${CA_BUNDLE_PATH:}
 ```
+
+LLM header precedence (lowest to highest):
+
+1. Provider defaults/auth headers (`LlmProvider`)
+2. `relay.llm.custom-headers`
+3. Per-model headers (`reasoning-model.headers`, `utility-model.headers`, `providers[].headers`)
+4. `LlmGatewayHeadersContributor` beans
+
+Later layers override earlier values for the same header key.
 
 ---
 
