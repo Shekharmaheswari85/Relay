@@ -37,7 +37,7 @@
     </modules>
 
     <properties>
-        <revision>1.0.6</revision>
+        <revision></revision>
         <java.version>21</java.version>
         <spring-ai.version>1.0.0</spring-ai.version>
         <resilience4j.version>2.2.0</resilience4j.version>
