@@ -141,6 +141,18 @@ public enum LlmProvider {
             headers.add(ANTHROPIC_VERSION_HEADER, version);
             return headers;
         }
+    },
+
+    /**
+     * Ollama local models accessed through its OpenAI-compatible endpoint.
+     * Produces standard direct OpenAI path: {@code /v1/chat/completions}.
+     * Auth header: {@code api-key} (Ollama typically does not require one).
+     */
+    OLLAMA(Headers.API_KEY) {
+        @Override
+        public String buildCompletionsPath(final String model, final String version, final String apiVersion) {
+            return "/v1/chat/completions";
+        }
     };
 
     private final String apiKeyHeaderName;

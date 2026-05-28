@@ -37,14 +37,15 @@
     </modules>
 
     <properties>
-        <revision></revision>
+        <revision>1.0.7-SNAPSHOT</revision>
         <java.version>21</java.version>
         <spring-ai.version>1.0.0</spring-ai.version>
-        <resilience4j.version>2.2.0</resilience4j.version>
-        <lombok.version>1.18.38</lombok.version>
+        <resilience4j.version>2.4.0</resilience4j.version>
+        <lombok.version>1.18.46</lombok.version>
         <maven.compiler.plugin.version>3.15.0</maven.compiler.plugin.version>
-        <spotbugs-maven-plugin.version>4.8.6.4</spotbugs-maven-plugin.version>
-        <maven-pmd-plugin.version>3.26.0</maven-pmd-plugin.version>
+        <spotbugs-maven-plugin.version>4.9.8.3</spotbugs-maven-plugin.version>
+        <maven-pmd-plugin.version>3.28.0</maven-pmd-plugin.version>
+        <httpclient5.version>5.6.1</httpclient5.version>
         <!-- Skip flags — override from CI: -Dspotbugs.skip=false -Dpmd.skip=false -->
         <spotbugs.skip>false</spotbugs.skip>
         <pmd.skip>false</pmd.skip>
@@ -88,6 +89,11 @@
                 <groupId>io.relay</groupId>
                 <artifactId>relay-orchestrator</artifactId>
                 <version>${revision}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.httpcomponents.client5</groupId>
+                <artifactId>httpclient5</artifactId>
+                <version>${httpclient5.version}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>

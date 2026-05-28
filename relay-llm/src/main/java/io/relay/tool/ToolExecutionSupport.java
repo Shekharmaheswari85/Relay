@@ -19,6 +19,7 @@ import org.springframework.stereotype.Component;
 
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Timer;
+import io.relay.session.TenantContextHolder;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 
@@ -199,11 +200,17 @@ public class ToolExecutionSupport {
     }
 
     private Timer timer(final String toolName, final String outcome) {
-        return Timer.builder("agent.tool.execution")
+        Timer.Builder builder = Timer.builder("agent.tool.execution")
                 .tag("tool", toolName)
                 .tag("outcome", outcome)
-                .description("Tool execution duration")
-                .register(meterRegistry);
+                .description("Tool execution duration");
+
+        String tenantId = TenantContextHolder.get();
+        if (tenantId != null && !tenantId.isBlank()) {
+            builder.tag("tenantId", tenantId);
+        }
+
+        return builder.register(meterRegistry);
     }
 
     /**

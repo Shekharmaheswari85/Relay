@@ -26,7 +26,7 @@ Relay gives you all of that — tested, observable, and extensible — as a set 
 | Capability | What you get |
 |---|---|
 | 🧠 **5-tier memory system** | Entity facts · Persona profiles · Workflow memory · Knowledge base · Session context |
-| 🔗 **8 built-in advisors** | Rate limiting · Circuit breaker · RAG (auto-wired) · Memory injection · Confirmation gate · Audit · Thinking · Fallback |
+| 🔗 **7 built-in advisors** | Rate limiting · Circuit breaker · RAG (auto-wired) · Memory injection · Confirmation gate · Audit · Thinking |
 | 🤝 **Agent-to-Agent (A2A)** | HTTP-native protocol for multi-agent fan-out with SSE streaming and pluggable auth |
 | 🗄️ **Swappable store backends** | In-memory (dev) → JPA → Redis → your own, zero code changes |
 | 📊 **Full observability** | Micrometer metrics · common-tag filters · MDC logging · distributed tracing |
@@ -152,7 +152,6 @@ sequenceDiagram
     Note over ADV: 5 · RagAdvisor (auto-wired)<br/>retrieves & injects documents
     Note over ADV: 6 · BaseAuditAdvisor<br/>records LLM call events
     Note over ADV: 7 · ThinkingAdvisor<br/>emits chain-of-thought SSE tokens
-    Note over ADV: 8 · FallbackModelAdvisor<br/>switches to utility model on error
 
     ADV->>+LLM: ChatClient.call()
     LLM-->>-ADV: ChatResponse
@@ -364,7 +363,7 @@ List<MemoryEntry> relevant = memory.recall(sessionId, userId, MemoryType.WORKFLO
 
 ### Advisor Chain
 
-Eight production-ready advisors that plug into Spring AI's `CallAdvisor` chain in a deterministic order:
+Seven production-ready advisors that plug into Spring AI's `CallAdvisor` chain in a deterministic order:
 
 ```
 ConfirmationGateAdvisor  — block MUTATION tools without user approval
@@ -374,7 +373,6 @@ MemoryAdvisor            — inject persona + entity + workflow memory
 RagAdvisor               — retrieve & inject relevant documents (auto-wired)
 BaseAuditAdvisor         — record LLM call events
 ThinkingAdvisor          — emit chain-of-thought SSE events
-FallbackModelAdvisor     — fall back to utility model on error
 ```
 
 #### RagAdvisor — zero-config wiring

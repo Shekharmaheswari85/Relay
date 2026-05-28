@@ -8,7 +8,7 @@ This is the top-level Relay module. It wires together every other module, provid
 
 | Package          | Contents                                                                                                                                                                                                                            |
 |------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `advisor/`       | 8 built-in advisors: `ConfirmationGateAdvisor`, `CircuitBreakerAdvisor`, `RateLimitAdvisor`, `MemoryAdvisor`, `RagAdvisor`, `BaseAuditAdvisor`, `ThinkingAdvisor`, `FallbackModelAdvisor`                                           |
+| `advisor/`       | 7 built-in advisors: `ConfirmationGateAdvisor`, `CircuitBreakerAdvisor`, `RateLimitAdvisor`, `MemoryAdvisor`, `RagAdvisor`, `BaseAuditAdvisor`, `ThinkingAdvisor`                                                                   |
 | `a2a/`           | `AgentClient`, `AgentClientRegistry`, `A2AHttpClient`, `A2AAuthContributor`, `StaticBearerTokenA2AAuthContributor`, `ApiKeyA2AAuthContributor`, `BasicAuthA2AAuthContributor`, `AgentCard`, `AgentCardController`, `SseEventParser` |
 | `agent/`         | `BaseSubAgent`, `AgentExecutionContext`                                                                                                                                                                                             |
 | `audit/`         | `AgentRequestTrace`                                                                                                                                                                                                                 |
@@ -53,7 +53,7 @@ This is the top-level Relay module. It wires together every other module, provid
 
 ## Advisor Chain
 
-Eight advisors execute in a deterministic order:
+Seven advisors execute in a deterministic order:
 
 ```
 HIGHEST_PRECEDENCE      ConfirmationGateAdvisor   — block MUTATION tools without user approval
@@ -63,7 +63,6 @@ HIGHEST_PRECEDENCE + 5  MemoryAdvisor             — inject persona + entity + 
 HIGHEST_PRECEDENCE + 10 RagAdvisor                — retrieve & inject relevant documents
                         BaseAuditAdvisor           — record LLM call events
 HIGHEST_PRECEDENCE + 20 ThinkingAdvisor           — emit chain-of-thought SSE events
-                        FallbackModelAdvisor       — fall back to utility model on error
 ```
 
 ### ConfirmationGateAdvisor + REST protocol

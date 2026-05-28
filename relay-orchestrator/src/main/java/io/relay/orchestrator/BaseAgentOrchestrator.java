@@ -27,6 +27,7 @@ import io.relay.repository.BaseAgentSessionRepository;
 import io.relay.session.ActiveAgentHolder;
 import io.relay.session.SessionContextHolder;
 import io.relay.session.SessionContextManager;
+import io.relay.session.TenantContextHolder;
 import io.relay.stream.PipelineEmitter;
 import io.relay.stream.ThinkingStreamParser;
 import io.relay.stream.ToolProgressPublisher;
@@ -186,6 +187,9 @@ public abstract class BaseAgentOrchestrator<S extends BaseAgentSession, STEP> {
             final Map<String, Object> context) {
 
         SessionContextHolder.set(sessionId);
+        if (session.getTenantId() != null && !session.getTenantId().isBlank()) {
+            TenantContextHolder.set(session.getTenantId());
+        }
         try {
             registerRouteStart(sessionId, emitter);
             STEP currentStep = parseCurrentStep(session);
@@ -209,6 +213,7 @@ public abstract class BaseAgentOrchestrator<S extends BaseAgentSession, STEP> {
         } finally {
             toolProgressPublisher.unregister(sessionId);
             SessionContextHolder.clear();
+            TenantContextHolder.clear();
         }
     }
 

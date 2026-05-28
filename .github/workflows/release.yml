@@ -15,9 +15,6 @@ name: Release
 #   9. Creates GitHub Release with auto-generated notes
 
 on:
-  push:
-    branches:
-      - main
   workflow_dispatch:
     inputs:
       bump_type:
@@ -79,10 +76,19 @@ jobs:
           RELEASE=${CURRENT%-SNAPSHOT}
           IFS='.' read -r MAJOR MINOR PATCH <<< "$RELEASE"
 
-          case "${{ inputs.bump_type }}" in
+          BUMP_TYPE="${{ inputs.bump_type }}"
+          if [ -z "$BUMP_TYPE" ]; then
+            BUMP_TYPE="patch"
+          fi
+
+          case "$BUMP_TYPE" in
             major) NEXT="$((MAJOR + 1)).0.0-SNAPSHOT" ;;
             minor) NEXT="${MAJOR}.$((MINOR + 1)).0-SNAPSHOT" ;;
             patch) NEXT="${MAJOR}.${MINOR}.$((PATCH + 1))-SNAPSHOT" ;;
+            *)
+              echo "::error::Invalid bump type '$BUMP_TYPE'."
+              exit 1
+              ;;
           esac
 
           echo "release=$RELEASE"  >> "$GITHUB_OUTPUT"

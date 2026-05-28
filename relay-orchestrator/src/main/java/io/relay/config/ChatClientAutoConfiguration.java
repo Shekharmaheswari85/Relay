@@ -47,6 +47,8 @@ import org.springframework.web.reactive.function.client.ExchangeFilterFunction;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.util.UriComponentsBuilder;
 
+import org.springframework.ai.chat.model.ChatModel;
+import org.springframework.context.ApplicationContext;
 import io.relay.llm.ChatClientRegistry;
 import io.relay.llm.LlmModelConfig;
 import io.relay.llm.LlmProvider;
@@ -74,12 +76,12 @@ import lombok.extern.slf4j.Slf4j;
  */
 @Configuration
 @EnableConfigurationProperties(AgentLlmProperties.class)
-@ConditionalOnProperty(prefix = "relay.llm", name = "gateway-base-url")
 @RequiredArgsConstructor
 @Slf4j
 public class ChatClientAutoConfiguration {
 
     private final AgentLlmProperties properties;
+    private final ApplicationContext applicationContext;
 
     /**
      * Optional gateway headers contributor — pluggable SPI for injecting provider-specific
@@ -179,10 +181,13 @@ public class ChatClientAutoConfiguration {
             final List<Advisor> advisors,
             final String systemPrompt) {
 
-        OpenAiChatModel chatModel = buildChatModel(baseUrl, apiKey, modelConfig, modelHeaders);
+        ChatModel chatModel = resolveChatModel(baseUrl, apiKey, modelConfig, modelHeaders);
 
-        ChatClient.Builder builder = ChatClient.builder(Objects.requireNonNull(chatModel, "Chat model must not be null"))
-                .defaultOptions(Objects.requireNonNull(buildModelOptions(modelConfig), "Chat options must not be null"));
+        ChatClient.Builder builder = ChatClient.builder(Objects.requireNonNull(chatModel, "Chat model must not be null"));
+
+        if (chatModel instanceof OpenAiChatModel) {
+            builder.defaultOptions(Objects.requireNonNull(buildModelOptions(modelConfig), "Chat options must not be null"));
+        }
 
         if (systemPrompt != null && !systemPrompt.isBlank()) {
             builder.defaultSystem(systemPrompt);
@@ -197,6 +202,50 @@ public class ChatClientAutoConfiguration {
         }
 
         return builder.build();
+    }
+
+    private ChatModel resolveChatModel(
+            final String baseUrl,
+            final String apiKey,
+            final LlmModelConfig modelConfig,
+            final Map<String, String> modelHeaders) {
+
+        LlmProvider provider = modelConfig.provider();
+        String providerName = provider.name().toLowerCase(Locale.ROOT);
+
+        // Try to find a matching ChatModel bean in the application context
+        Map<String, ChatModel> chatModelBeans = applicationContext.getBeansOfType(ChatModel.class);
+        if (!chatModelBeans.isEmpty()) {
+            // 1. If there's only one ChatModel bean in the context, use it directly
+            if (chatModelBeans.size() == 1) {
+                ChatModel singleModel = chatModelBeans.values().iterator().next();
+                log.info("Using the single registered ChatModel bean of type: {}", singleModel.getClass().getName());
+                return singleModel;
+            }
+
+            // 2. Try to match by bean name or class name containing the provider name
+            for (Map.Entry<String, ChatModel> entry : chatModelBeans.entrySet()) {
+                String beanName = entry.getKey().toLowerCase(Locale.ROOT);
+                ChatModel modelBean = entry.getValue();
+                String className = modelBean.getClass().getSimpleName().toLowerCase(Locale.ROOT);
+
+                if (beanName.contains(providerName) || className.contains(providerName)) {
+                    log.info("Using matched ChatModel bean '{}' [{}] for provider {}",
+                            entry.getKey(), modelBean.getClass().getName(), provider);
+                    return modelBean;
+                }
+            }
+
+            // 3. Fallback: if there's a bean named "chatModel"
+            if (chatModelBeans.containsKey("chatModel")) {
+                log.info("Using default 'chatModel' bean");
+                return chatModelBeans.get("chatModel");
+            }
+        }
+
+        // Fallback to OpenAI compatible gateway client
+        log.info("No native ChatModel bean found for provider {}. Falling back to gateway adapter.", provider);
+        return buildChatModel(baseUrl, apiKey, modelConfig, modelHeaders);
     }
 
     private OpenAiChatModel buildChatModel(
