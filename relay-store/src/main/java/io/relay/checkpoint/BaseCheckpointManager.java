@@ -10,8 +10,8 @@ package io.relay.checkpoint;
 import java.util.Map;
 import java.util.Optional;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.ObjectMapper;
 import io.relay.model.BaseAgentSession;
 import io.relay.repository.BaseAgentSessionRepository;
 import io.relay.session.SessionContextManager;
@@ -154,7 +154,7 @@ public abstract class BaseCheckpointManager<S extends BaseAgentSession> {
 
             try {
                 session.setContextJson(objectMapper.writeValueAsString(existingContext));
-            } catch (JsonProcessingException e) {
+            } catch (JacksonException e) {
                 log.error("Failed to serialize context for session {}: {}", sessionId, e.getMessage());
                 return;
             }
@@ -181,7 +181,7 @@ public abstract class BaseCheckpointManager<S extends BaseAgentSession> {
             try {
                 session.setContextJson(objectMapper.writeValueAsString(context));
                 getSessionRepository().save(session);
-            } catch (JsonProcessingException ex) {
+            } catch (JacksonException ex) {
                 log.warn("Failed to refresh working state summary for session {}: {}", sessionId, ex.getMessage());
             }
         });

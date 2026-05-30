@@ -12,7 +12,7 @@ import java.util.Map;
 import java.util.Objects;
 
 import org.springframework.ai.chat.client.ChatClient;
-import org.springframework.lang.Nullable;
+import org.jspecify.annotations.Nullable;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;

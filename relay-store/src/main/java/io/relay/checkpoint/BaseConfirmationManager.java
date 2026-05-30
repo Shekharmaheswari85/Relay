@@ -9,8 +9,8 @@ package io.relay.checkpoint;
 
 import java.util.Map;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.ObjectMapper;
 import io.relay.model.BaseAgentSession;
 import io.relay.repository.BaseAgentSessionRepository;
 import io.relay.session.SessionContextManager;
@@ -94,7 +94,7 @@ public abstract class BaseConfirmationManager<S extends BaseAgentSession> {
                     session.getSessionId(),
                     session.getCurrentStep(),
                     expectedTool);
-        } catch (JsonProcessingException e) {
+        } catch (JacksonException e) {
             log.warn("Failed to persist confirmation for session {}: {}", session.getSessionId(), e.getMessage());
         }
     }
@@ -120,7 +120,7 @@ public abstract class BaseConfirmationManager<S extends BaseAgentSession> {
                     session.setContextJson(objectMapper.writeValueAsString(context));
                     getSessionRepository().save(session);
                     log.debug("Cleared pending confirmation for session {}", sessionId);
-                } catch (JsonProcessingException e) {
+                } catch (JacksonException e) {
                     log.warn("Failed to clear confirmation for session {}: {}", sessionId, e.getMessage());
                 }
             }

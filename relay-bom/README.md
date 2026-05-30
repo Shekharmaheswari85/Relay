@@ -12,7 +12,7 @@ Import this BOM into your project's `dependencyManagement` to lock all Relay mod
         <dependency>
             <groupId>io.relay</groupId>
             <artifactId>relay-bom</artifactId>
-            <version>1.0.5</version>
+            <version>1.0.7-SNAPSHOT</version>
             <type>pom</type>
             <scope>import</scope>
         </dependency>

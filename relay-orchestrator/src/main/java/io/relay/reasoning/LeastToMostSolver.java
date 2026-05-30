@@ -13,8 +13,8 @@ import java.util.List;
 import java.util.Objects;
 
 import org.springframework.ai.chat.client.ChatClient;
-import org.springframework.lang.NonNull;
-import org.springframework.lang.Nullable;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import lombok.extern.slf4j.Slf4j;
 

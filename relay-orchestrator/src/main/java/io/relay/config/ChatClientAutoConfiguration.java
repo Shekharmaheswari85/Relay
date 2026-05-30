@@ -7,45 +7,28 @@
  */
 package io.relay.config;
 
-import java.io.File;
+import java.util.ArrayList;
 import java.util.EnumMap;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 
-import javax.net.ssl.SSLContext;
-
-import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
-import org.apache.hc.client5.http.impl.classic.HttpClients;
-import org.apache.hc.client5.http.impl.io.PoolingHttpClientConnectionManagerBuilder;
-import org.apache.hc.client5.http.ssl.ClientTlsStrategyBuilder;
-import org.apache.hc.client5.http.ssl.NoopHostnameVerifier;
-import org.apache.hc.core5.ssl.SSLContextBuilder;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.client.advisor.api.Advisor;
 import org.springframework.ai.openai.OpenAiChatModel;
 import org.springframework.ai.openai.OpenAiChatOptions;
-import org.springframework.ai.openai.api.OpenAiApi;
+import com.openai.client.OpenAIClient;
+import com.openai.client.okhttp.OpenAIOkHttpClient;
 import org.springframework.ai.tool.ToolCallbackProvider;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.apache.hc.client5.http.impl.async.CloseableHttpAsyncClient;
-import org.apache.hc.client5.http.impl.async.HttpAsyncClients;
-import org.apache.hc.client5.http.impl.nio.PoolingAsyncClientConnectionManagerBuilder;
-import org.springframework.http.client.HttpComponentsClientHttpRequestFactory;
-import org.springframework.http.client.reactive.HttpComponentsClientHttpConnector;
 import org.springframework.util.MultiValueMap;
-import org.springframework.web.client.RestClient;
-import org.springframework.web.reactive.function.client.ClientRequest;
-import org.springframework.web.reactive.function.client.ExchangeFilterFunction;
-import org.springframework.web.reactive.function.client.WebClient;
-import org.springframework.web.util.UriComponentsBuilder;
 
 import org.springframework.ai.chat.model.ChatModel;
 import org.springframework.context.ApplicationContext;
@@ -64,15 +47,17 @@ import lombok.extern.slf4j.Slf4j;
  *
  * <h3>Features</h3>
  * <ul>
- *   <li>Auto-discovers all {@link Advisor} beans and applies them to ChatClient</li>
- *   <li>Auto-discovers {@link ToolCallbackProvider} and registers tools</li>
- *   <li>Auto-discovers {@link AgentSystemPromptProvider} for system prompts</li>
- *   <li>Supports multiple providers with runtime switching</li>
- *   <li>Handles custom LLM gateway SSL and audit headers</li>
+ * <li>Auto-discovers all {@link Advisor} beans and applies them to
+ * ChatClient</li>
+ * <li>Auto-discovers {@link ToolCallbackProvider} and registers tools</li>
+ * <li>Auto-discovers {@link AgentSystemPromptProvider} for system prompts</li>
+ * <li>Supports multiple providers with runtime switching</li>
+ * <li>Handles custom LLM gateway SSL and audit headers</li>
  * </ul>
  *
  * <h3>Customization</h3>
- * Define your own {@code ChatClientRegistry} bean to override auto-configuration.
+ * Define your own {@code ChatClientRegistry} bean to override
+ * auto-configuration.
  */
 @Configuration
 @EnableConfigurationProperties(AgentLlmProperties.class)
@@ -84,7 +69,8 @@ public class ChatClientAutoConfiguration {
     private final ApplicationContext applicationContext;
 
     /**
-     * Optional gateway headers contributor — pluggable SPI for injecting provider-specific
+     * Optional gateway headers contributor — pluggable SPI for injecting
+     * provider-specific
      * audit/routing headers. When no bean is defined, no extra headers are added.
      */
     private List<LlmGatewayHeadersContributor> gatewayHeadersContributors = List.of();
@@ -110,28 +96,61 @@ public class ChatClientAutoConfiguration {
         String systemPrompt = resolveSystemPrompt(systemPromptProvider);
 
         // Build reasoning client (required)
-        if (properties.getReasoningModel() == null) {
-            throw new IllegalStateException("relay.llm.reasoning-model must be configured");
+        ChatClient reasoningClient;
+        LlmProvider reasoningProvider;
+        if (properties.getReasoningModels() != null && !properties.getReasoningModels().isEmpty()) {
+            log.info("Configuring resilient Reasoning client with {} failover delegates.",
+                    properties.getReasoningModels().size());
+            reasoningClient = buildFailoverChatClient(baseUrl, apiKey, properties.getReasoningModels(), tools, advisors,
+                    systemPrompt);
+            reasoningProvider = LlmProvider.fromString(properties.getReasoningModels().get(0).getProvider());
+        } else {
+            if (properties.getReasoningModel() == null) {
+                throw new IllegalStateException(
+                        "relay.llm.reasoning-model or relay.llm.reasoning-models must be configured");
+            }
+            LlmModelConfig reasoningConfig = toLlmModelConfig(properties.getReasoningModel());
+            logModelConfig("reasoning-model", reasoningConfig);
+
+            String reasoningBaseUrl = properties.getReasoningModel().getGatewayBaseUrl() != null
+                    ? normalizeBaseUrl(properties.getReasoningModel().getGatewayBaseUrl())
+                    : baseUrl;
+            String reasoningApiKey = properties.getReasoningModel().getApiKey() != null
+                    ? properties.getReasoningModel().getApiKey()
+                    : apiKey;
+
+            reasoningClient = buildChatClient(
+                    reasoningBaseUrl,
+                    reasoningApiKey,
+                    reasoningConfig,
+                    properties.getReasoningModel().getHeaders(),
+                    tools,
+                    advisors,
+                    systemPrompt);
+            reasoningProvider = reasoningConfig.provider();
         }
-        LlmModelConfig reasoningConfig = toLlmModelConfig(properties.getReasoningModel());
-        logModelConfig("reasoning-model", reasoningConfig);
-        ChatClient reasoningClient = buildChatClient(
-                baseUrl,
-                apiKey,
-                reasoningConfig,
-                properties.getReasoningModel().getHeaders(),
-                tools,
-                advisors,
-                systemPrompt);
 
         // Build utility client (optional)
         ChatClient utilityClient = null;
-        if (properties.getUtilityModel() != null) {
+        if (properties.getUtilityModels() != null && !properties.getUtilityModels().isEmpty()) {
+            log.info("Configuring resilient Utility client with {} failover delegates.",
+                    properties.getUtilityModels().size());
+            utilityClient = buildFailoverChatClient(baseUrl, apiKey, properties.getUtilityModels(), tools, advisors,
+                    systemPrompt);
+        } else if (properties.getUtilityModel() != null) {
             LlmModelConfig utilityConfig = toLlmModelConfig(properties.getUtilityModel());
             logModelConfig("utility-model", utilityConfig);
+
+            String utilityBaseUrl = properties.getUtilityModel().getGatewayBaseUrl() != null
+                    ? normalizeBaseUrl(properties.getUtilityModel().getGatewayBaseUrl())
+                    : baseUrl;
+            String utilityApiKey = properties.getUtilityModel().getApiKey() != null
+                    ? properties.getUtilityModel().getApiKey()
+                    : apiKey;
+
             utilityClient = buildChatClient(
-                    baseUrl,
-                    apiKey,
+                    utilityBaseUrl,
+                    utilityApiKey,
                     utilityConfig,
                     properties.getUtilityModel().getHeaders(),
                     tools,
@@ -141,7 +160,7 @@ public class ChatClientAutoConfiguration {
 
         // Build provider-specific clients for runtime switching
         Map<LlmProvider, ChatClient> providerClients = new EnumMap<>(LlmProvider.class);
-        providerClients.put(reasoningConfig.provider(), reasoningClient);
+        providerClients.put(reasoningProvider, reasoningClient);
 
         if (properties.getProviders() != null) {
             for (AgentLlmProperties.ModelConfig providerConfig : properties.getProviders()) {
@@ -149,11 +168,19 @@ public class ChatClientAutoConfiguration {
                 if (!providerClients.containsKey(provider)) {
                     LlmModelConfig config = toLlmModelConfig(providerConfig);
                     logModelConfig("provider[" + provider + "]", config);
+
+                    String pBaseUrl = providerConfig.getGatewayBaseUrl() != null
+                            ? normalizeBaseUrl(providerConfig.getGatewayBaseUrl())
+                            : baseUrl;
+                    String pApiKey = providerConfig.getApiKey() != null
+                            ? providerConfig.getApiKey()
+                            : apiKey;
+
                     providerClients.put(
                             provider,
                             buildChatClient(
-                                    baseUrl,
-                                    apiKey,
+                                    pBaseUrl,
+                                    pApiKey,
                                     config,
                                     providerConfig.getHeaders(),
                                     tools,
@@ -172,6 +199,51 @@ public class ChatClientAutoConfiguration {
         return new ChatClientRegistry(providerClients, reasoningClient, utilityClient, defaultProvider);
     }
 
+    private ChatClient buildFailoverChatClient(
+            final String baseUrl,
+            final String apiKey,
+            final List<AgentLlmProperties.ModelConfig> modelConfigs,
+            final ToolCallbackProvider tools,
+            final List<Advisor> advisors,
+            final String systemPrompt) {
+
+        List<ChatModel> delegates = modelConfigs.stream()
+                .map(config -> {
+                    LlmModelConfig resolvedConfig = toLlmModelConfig(config);
+                    String mBaseUrl = config.getGatewayBaseUrl() != null
+                            ? normalizeBaseUrl(config.getGatewayBaseUrl())
+                            : baseUrl;
+                    String mApiKey = config.getApiKey() != null
+                            ? config.getApiKey()
+                            : apiKey;
+                    return resolveChatModel(mBaseUrl, mApiKey, resolvedConfig, config.getHeaders());
+                })
+                .filter(Objects::nonNull)
+                .toList();
+
+        if (delegates.isEmpty()) {
+            throw new IllegalStateException("Failed to build any delegate ChatModels for failover list");
+        }
+
+        ChatModel chatModel = new io.relay.llm.FailoverChatModel(delegates);
+
+        ChatClient.Builder builder = ChatClient.builder(chatModel);
+
+        if (systemPrompt != null && !systemPrompt.isBlank()) {
+            builder.defaultSystem(systemPrompt);
+        }
+
+        if (tools != null) {
+            builder.defaultTools((Object[]) tools.getToolCallbacks());
+        }
+
+        if (advisors != null && !advisors.isEmpty()) {
+            builder.defaultAdvisors(advisors.toArray(new Advisor[0]));
+        }
+
+        return builder.build();
+    }
+
     private ChatClient buildChatClient(
             final String baseUrl,
             final String apiKey,
@@ -183,10 +255,12 @@ public class ChatClientAutoConfiguration {
 
         ChatModel chatModel = resolveChatModel(baseUrl, apiKey, modelConfig, modelHeaders);
 
-        ChatClient.Builder builder = ChatClient.builder(Objects.requireNonNull(chatModel, "Chat model must not be null"));
+        ChatClient.Builder builder = ChatClient
+                .builder(Objects.requireNonNull(chatModel, "Chat model must not be null"));
 
         if (chatModel instanceof OpenAiChatModel) {
-            builder.defaultOptions(Objects.requireNonNull(buildModelOptions(modelConfig), "Chat options must not be null"));
+            builder.defaultOptions(
+                    Objects.requireNonNull(buildModelOptions(modelConfig), "Chat options must not be null").mutate());
         }
 
         if (systemPrompt != null && !systemPrompt.isBlank()) {
@@ -194,11 +268,12 @@ public class ChatClientAutoConfiguration {
         }
 
         if (tools != null) {
-            builder.defaultToolCallbacks(tools);
+            builder.defaultTools((Object[]) tools.getToolCallbacks());
         }
 
         if (advisors != null && !advisors.isEmpty()) {
-            builder.defaultAdvisors(Objects.requireNonNull(advisors.toArray(new Advisor[0]), "Advisors must not be null"));
+            builder.defaultAdvisors(
+                    Objects.requireNonNull(advisors.toArray(new Advisor[0]), "Advisors must not be null"));
         }
 
         return builder.build();
@@ -213,14 +288,26 @@ public class ChatClientAutoConfiguration {
         LlmProvider provider = modelConfig.provider();
         String providerName = provider.name().toLowerCase(Locale.ROOT);
 
+        // Check if there are explicit overrides on credentials, endpoints, or headers
+        String globalBaseUrl = normalizeBaseUrl(properties.getGatewayBaseUrl());
+        String globalApiKey = properties.getApiKey() != null ? properties.getApiKey() : "";
+        boolean hasOverrides = !Objects.equals(baseUrl, globalBaseUrl)
+                || !Objects.equals(apiKey, globalApiKey)
+                || (modelHeaders != null && !modelHeaders.isEmpty());
+
         // Try to find a matching ChatModel bean in the application context
         Map<String, ChatModel> chatModelBeans = applicationContext.getBeansOfType(ChatModel.class);
-        if (!chatModelBeans.isEmpty()) {
-            // 1. If there's only one ChatModel bean in the context, use it directly
+        if (!chatModelBeans.isEmpty() && !hasOverrides) {
+            // 1. If there's only one ChatModel bean in the context and it matches the
+            // provider, use it directly
             if (chatModelBeans.size() == 1) {
                 ChatModel singleModel = chatModelBeans.values().iterator().next();
-                log.info("Using the single registered ChatModel bean of type: {}", singleModel.getClass().getName());
-                return singleModel;
+                String className = singleModel.getClass().getSimpleName().toLowerCase(Locale.ROOT);
+                if (className.contains(providerName)) {
+                    log.info("Using the single registered ChatModel bean of type: {}",
+                            singleModel.getClass().getName());
+                    return singleModel;
+                }
             }
 
             // 2. Try to match by bean name or class name containing the provider name
@@ -244,7 +331,9 @@ public class ChatClientAutoConfiguration {
         }
 
         // Fallback to OpenAI compatible gateway client
-        log.info("No native ChatModel bean found for provider {}. Falling back to gateway adapter.", provider);
+        log.info(
+                "No native ChatModel bean found for provider {} (or overrides present). Falling back to gateway adapter.",
+                provider);
         return buildChatModel(baseUrl, apiKey, modelConfig, modelHeaders);
     }
 
@@ -260,7 +349,8 @@ public class ChatClientAutoConfiguration {
         addCustomHeaders(headers, modelHeaders);
 
         // Add gateway-specific audit/routing headers via pluggable SPI.
-        // Provide a LlmGatewayHeadersContributor bean to inject gateway-specific headers.
+        // Provide a LlmGatewayHeadersContributor bean to inject gateway-specific
+        // headers.
         if (!gatewayHeadersContributors.isEmpty()) {
             AgentLlmProperties.AuditConfig audit = properties.getAudit();
             for (LlmGatewayHeadersContributor contributor : gatewayHeadersContributors) {
@@ -268,20 +358,19 @@ public class ChatClientAutoConfiguration {
             }
         }
 
-        String completionsPath = modelConfig.resolveCompletionsPath();
-
-        OpenAiApi openAiApi = OpenAiApi.builder()
-                .baseUrl(baseUrl)
+        OpenAIOkHttpClient.Builder clientBuilder = OpenAIOkHttpClient.builder()
                 .apiKey(apiKey)
-                .headers(headers)
-                .completionsPath(completionsPath)
-                .restClientBuilder(buildRestClientBuilder())
-                .webClientBuilder(buildWebClientBuilder(modelConfig.apiVersion()))
-                .build();
+                .baseUrl(baseUrl);
+
+        Map<String, Iterable<String>> clientHeaders = new HashMap<>();
+        headers.forEach((key, list) -> clientHeaders.put(key, new ArrayList<>(list)));
+        clientBuilder.headers(clientHeaders);
+
+        OpenAIClient openAiClient = clientBuilder.build();
 
         return OpenAiChatModel.builder()
-                .openAiApi(openAiApi)
-                .defaultOptions(buildModelOptions(modelConfig))
+                .openAiClient(openAiClient)
+                .options(buildModelOptions(modelConfig))
                 .build();
     }
 
@@ -313,114 +402,6 @@ public class ChatClientAutoConfiguration {
 
     private boolean isGpt5Family(final String model) {
         return model != null && model.toLowerCase(Locale.ROOT).startsWith("gpt-5");
-    }
-
-    @SuppressWarnings("PMD.CloseResource")
-    private WebClient.Builder buildWebClientBuilder(final String apiVersion) {
-        try {
-            AgentLlmProperties.SslConfig ssl = properties.getSsl();
-            validateSslConfig(ssl);
-
-            SSLContext sslContext;
-            if (ssl.isTrustAll()) {
-                log.warn("LLM gateway SSL trust-all mode enabled. Use only for local development.");
-                sslContext = SSLContextBuilder.create()
-                        .loadTrustMaterial(null, (chain, authType) -> true)
-                        .build();
-            } else if (ssl.getCaPath() != null && !ssl.getCaPath().isBlank()) {
-                log.info("LLM gateway SSL using custom CA bundle: {}", ssl.getCaPath());
-                sslContext = SSLContextBuilder.create()
-                        .loadTrustMaterial(new File(ssl.getCaPath()), null)
-                        .build();
-            } else {
-                sslContext = SSLContext.getDefault();
-            }
-
-            var tlsStrategyBuilder = ClientTlsStrategyBuilder.create().setSslContext(sslContext);
-            if (ssl.isTrustAll()) {
-                tlsStrategyBuilder.setHostnameVerifier(NoopHostnameVerifier.INSTANCE);
-            }
-
-            var connectionManager = PoolingAsyncClientConnectionManagerBuilder.create()
-                    .setTlsStrategy(tlsStrategyBuilder.buildAsync())
-                    .build();
-            CloseableHttpAsyncClient asyncClient = HttpAsyncClients.custom()
-                    .setConnectionManager(connectionManager)
-                    .build();
-            asyncClient.start();
-
-            WebClient.Builder builder = WebClient.builder()
-                    .clientConnector(new HttpComponentsClientHttpConnector(
-                            Objects.requireNonNull(asyncClient, "Async HTTP client must not be null")));
-
-            if (apiVersion != null && !apiVersion.isBlank()) {
-                builder.filter(Objects.requireNonNull(apiVersionFilter(apiVersion), "API version filter must not be null"));
-            }
-
-            return builder;
-        } catch (Exception ex) {
-            throw new IllegalStateException("Failed to configure LLM gateway SSL", ex);
-        }
-    }
-
-    private RestClient.Builder buildRestClientBuilder() {
-        try {
-            AgentLlmProperties.SslConfig ssl = properties.getSsl();
-            validateSslConfig(ssl);
-
-            SSLContext sslContext = ssl.isTrustAll()
-                    ? SSLContextBuilder.create()
-                            .loadTrustMaterial(null, (chain, authType) -> true)
-                            .build()
-                    : SSLContext.getDefault();
-
-            var tlsStrategy = ClientTlsStrategyBuilder.create().setSslContext(sslContext);
-            if (ssl.isTrustAll()) {
-                tlsStrategy.setHostnameVerifier(NoopHostnameVerifier.INSTANCE);
-            }
-
-            CloseableHttpClient httpClient = HttpClients.custom()
-                    .setConnectionManager(PoolingHttpClientConnectionManagerBuilder.create()
-                            .setTlsSocketStrategy(tlsStrategy.buildClassic())
-                            .build())
-                    .build();
-
-            return RestClient.builder()
-                    .requestFactory(new HttpComponentsClientHttpRequestFactory(Objects.requireNonNull(httpClient, "HTTP client must not be null")));
-        } catch (Exception ex) {
-            throw new IllegalStateException("Failed to configure LLM gateway RestClient SSL", ex);
-        }
-    }
-
-    private void validateSslConfig(final AgentLlmProperties.SslConfig ssl) {
-        if (ssl.isTrustAll() && !ssl.isAllowInsecureTrustAll()) {
-            throw new IllegalStateException(
-                    "relay.llm.ssl.trust-all=true disables TLS certificate and hostname verification. "
-                            + "For local development only, also set "
-                            + "relay.llm.ssl.allow-insecure-trust-all=true to acknowledge this risk.");
-        }
-    }
-
-    private ExchangeFilterFunction apiVersionFilter(final String apiVersion) {
-        return (request, next) -> {
-            String path = request.url().getPath();
-            boolean isAzureDeployment = path != null && path.contains("/openai/deployments/");
-            boolean hasApiVersion = request.url().getQuery() != null
-                    && request.url().getQuery().contains("api-version=");
-
-            if (!isAzureDeployment || hasApiVersion) {
-                return next.exchange(request);
-            }
-
-            var updatedUri = UriComponentsBuilder.fromUri(request.url())
-                    .queryParam("api-version", apiVersion)
-                    .build(true)
-                    .toUri();
-            var mutatedRequest = ClientRequest.from(request)
-                    .url(updatedUri)
-                    .build();
-            return next.exchange(mutatedRequest);
-        };
     }
 
     private String resolveSystemPrompt(final ObjectProvider<AgentSystemPromptProvider> provider) {

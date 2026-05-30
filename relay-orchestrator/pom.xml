@@ -8,6 +8,7 @@
         <groupId>io.relay</groupId>
         <artifactId>relay-parent</artifactId>
         <version>${revision}</version>
+        <relativePath>../pom.xml</relativePath>
     </parent>
 
     <artifactId>relay-orchestrator</artifactId>
@@ -45,6 +46,12 @@
             <optional>true</optional>
         </dependency>
 
+        <!-- Spring AI Agent Utils -->
+        <dependency>
+            <groupId>org.springaicommunity</groupId>
+            <artifactId>spring-ai-agent-utils</artifactId>
+        </dependency>
+
         <!-- Resilience4j circuit breaker (for CircuitBreakerAdvisor) -->
         <dependency>
             <groupId>io.github.resilience4j</groupId>
@@ -56,6 +63,11 @@
         <dependency>
             <groupId>org.springframework.ai</groupId>
             <artifactId>spring-ai-starter-model-openai</artifactId>
+            <optional>true</optional>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.ai</groupId>
+            <artifactId>spring-ai-openai</artifactId>
             <optional>true</optional>
         </dependency>
         <dependency>

@@ -9,8 +9,6 @@ package io.relay.executor;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import java.time.Duration;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -58,14 +56,9 @@ import io.relay.dto.BaseResumeSessionResponse;
 import io.relay.dto.BaseSessionStatusResponse;
 import io.relay.llm.ChatClientRegistry;
 import io.relay.llm.ModelTier;
-import io.relay.model.BaseAgentSession;
 import io.relay.observability.AgentObservabilityService;
 import io.relay.orchestrator.BaseAgentOrchestrator;
 import io.relay.repository.BaseAgentSessionRepository;
-import io.relay.session.ActiveAgentHolder;
-import io.relay.session.SessionContextHolder;
-import io.relay.session.TenantContextHolder;
-import io.relay.store.AgentSessionStore;
 import io.relay.stream.PipelineEmitter;
 import io.relay.stream.ToolProgressPublisher;
 import io.relay.session.SessionContextManager;
@@ -73,11 +66,11 @@ import io.relay.session.SessionContextManager;
 import io.relay.llm.LlmProvider;
 
 @SpringBootTest(properties = {
-    "spring.jpa.show-sql=false",
-    "relay.cache.type=inmemory",
-    "agent.virtual-threads.enabled=true",
-    "spring.main.allow-bean-definition-overriding=true",
-    "spring.ai.openai.api-key=test-key"
+        "spring.jpa.show-sql=false",
+        "relay.cache.type=inmemory",
+        "agent.virtual-threads.enabled=true",
+        "spring.main.allow-bean-definition-overriding=true",
+        "spring.ai.openai.api-key=test-key"
 })
 public class SuperAgentIntegrationTest {
 
@@ -103,7 +96,7 @@ public class SuperAgentIntegrationTest {
         createReq.setAgentId("super-agent");
         createReq.setCreatedBy("test-user");
         createReq.setTenantId("test-tenant");
-        
+
         BaseCreateSessionResponse createRes = runtimeService.createSession(createReq);
         String sessionId = createRes.getSessionId();
         assertThat(sessionId).isNotEmpty();
@@ -114,7 +107,8 @@ public class SuperAgentIntegrationTest {
         assertThat(dbSession.get().getCurrentStep()).isEqualTo("INIT");
         assertThat(dbSession.get().getStatus()).isEqualTo("ACTIVE");
 
-        // 2. Set up SseEventCaptor with a CountDownLatch to synchronize on streaming completion
+        // 2. Set up SseEventCaptor with a CountDownLatch to synchronize on streaming
+        // completion
         CountDownLatch latch = new CountDownLatch(1);
         SseEventCaptor captor = new SseEventCaptor(sessionId, latch);
 
@@ -128,7 +122,7 @@ public class SuperAgentIntegrationTest {
         // 5. Assert the SSE events streamed
         List<SseEventCaptor.SseEvent> events = captor.getEvents();
         assertThat(events).isNotEmpty();
-        
+
         // Assert stage event
         boolean hasExecutionStage = events.stream()
                 .anyMatch(e -> "stage".equals(e.eventType()) && e.data().contains("agent_execution"));
@@ -138,7 +132,8 @@ public class SuperAgentIntegrationTest {
         String messageText = captor.getMessageText();
         assertThat(messageText).contains("Parent LLM output");
 
-        // 6. Change session step to BILLING to trigger delegation handoff and A2A mock streaming
+        // 6. Change session step to BILLING to trigger delegation handoff and A2A mock
+        // streaming
         TestAgentSession session = sessionRepository.findBySessionId(sessionId).orElseThrow();
         session.setCurrentStep("BILLING");
         sessionRepository.save(session);
@@ -153,7 +148,7 @@ public class SuperAgentIntegrationTest {
         assertThat(handoffCompleted).isTrue();
 
         List<SseEventCaptor.SseEvent> handoffEvents = handoffCaptor.getEvents();
-        
+
         // Verify agent handoff event was emitted
         boolean hasHandoffEvent = handoffEvents.stream()
                 .anyMatch(e -> "agent_handoff".equals(e.eventType()));
@@ -164,7 +159,8 @@ public class SuperAgentIntegrationTest {
         assertThat(handoffMsg).contains("Billing Delegated chunk 1");
         assertThat(handoffMsg).contains("Billing Delegated chunk 2");
 
-        // Verify that the thread handling the delegate routing was a Project Loom virtual thread
+        // Verify that the thread handling the delegate routing was a Project Loom
+        // virtual thread
         List<SseEventCaptor.SseEvent> thinkingEvents = handoffEvents.stream()
                 .filter(e -> "thinking".equals(e.eventType()))
                 .toList();
@@ -199,8 +195,7 @@ public class SuperAgentIntegrationTest {
                     Map.of(LlmProvider.OPENAI, client),
                     client,
                     client,
-                    LlmProvider.OPENAI
-            );
+                    LlmProvider.OPENAI);
         }
 
         @Bean
@@ -236,14 +231,8 @@ public class SuperAgentIntegrationTest {
     // ─── Custom SuperAgent Executor & Orchestrator ──────────────────────────
 
     @Component
-    public static class SuperAgentExecutor implements AgentExecutor<
-            BaseCreateSessionRequest,
-            BaseCreateSessionResponse,
-            BaseSessionStatusResponse,
-            BaseDeleteSessionResponse,
-            BaseBulkDeleteResponse,
-            BaseResumeSessionResponse,
-            BaseAuditTrailResponse> {
+    public static class SuperAgentExecutor implements
+            AgentExecutor<BaseCreateSessionRequest, BaseCreateSessionResponse, BaseSessionStatusResponse, BaseDeleteSessionResponse, BaseBulkDeleteResponse, BaseResumeSessionResponse, BaseAuditTrailResponse> {
 
         @Autowired
         private TestAgentSessionRepository sessionRepository;
@@ -281,7 +270,7 @@ public class SuperAgentIntegrationTest {
                     .tenantId(request.getTenantId())
                     .build();
             sessionRepository.save(session);
-            
+
             BaseCreateSessionResponse res = new BaseCreateSessionResponse();
             res.setSessionId(sessionId);
             return res;
@@ -290,7 +279,7 @@ public class SuperAgentIntegrationTest {
         @Override
         public void sendMessage(String sessionId, String content, PipelineEmitter emitter) {
             TestAgentSession session = sessionRepository.findBySessionId(sessionId).orElseThrow();
-            
+
             // Execute the turn asynchronously on virtual threads
             virtualThreadExecutor.execute(() -> {
                 try {
@@ -345,7 +334,8 @@ public class SuperAgentIntegrationTest {
                 List<? extends BaseSubAgent<TestAgentSession, String>> subAgents,
                 AgentObservabilityService observabilityService,
                 @Qualifier("virtualThreadExecutor") ThreadPoolTaskExecutor virtualThreadExecutor) {
-            super(chatClientRegistry, sessionContextManager, toolProgressPublisher, sessionRepository, subAgents, observabilityService, virtualThreadExecutor);
+            super(chatClientRegistry, sessionContextManager, toolProgressPublisher, sessionRepository, subAgents,
+                    observabilityService, virtualThreadExecutor);
         }
 
         @Override
@@ -354,7 +344,8 @@ public class SuperAgentIntegrationTest {
         }
 
         @Override
-        protected String getSystemPrompt(BaseSubAgent<TestAgentSession, String> subAgent, TestAgentSession session, Map<String, Object> context) {
+        protected String getSystemPrompt(BaseSubAgent<TestAgentSession, String> subAgent, TestAgentSession session,
+                Map<String, Object> context) {
             return "System Base Prompt";
         }
 
@@ -424,7 +415,7 @@ public class SuperAgentIntegrationTest {
             // Demonstrate execution happens on Loom Virtual Threads
             boolean isVirtual = Thread.currentThread().isVirtual();
             ctx.emitter().sendThinking("Thread is virtual: " + isVirtual);
-            
+
             // Mock A2A stream execution
             ctx.emitter().sendStage("billing_execution", "Billing processing", 80);
             ctx.emitter().sendMessage("Billing Delegated chunk 1. ");
@@ -437,7 +428,8 @@ public class SuperAgentIntegrationTest {
 
     public static class SseEventCaptor extends PipelineEmitter {
 
-        public record SseEvent(String eventType, String data) {}
+        public record SseEvent(String eventType, String data) {
+        }
 
         private final List<SseEvent> events = new CopyOnWriteArrayList<>();
         private final CountDownLatch latch;
@@ -472,7 +464,8 @@ public class SuperAgentIntegrationTest {
 
         @Override
         public void sendAgentHandoff(String toAgent, String reason) {
-            events.add(new SseEvent("agent_handoff", "{\"toAgent\":\"" + toAgent + "\",\"reason\":\"" + reason + "\"}"));
+            events.add(
+                    new SseEvent("agent_handoff", "{\"toAgent\":\"" + toAgent + "\",\"reason\":\"" + reason + "\"}"));
         }
 
         @Override

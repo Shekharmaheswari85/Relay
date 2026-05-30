@@ -52,6 +52,8 @@ import io.relay.executor.AgentRegistry;
 import io.relay.filter.McpSseAuthFilter;
 import io.relay.memory.AgentMemoryManager;
 import io.relay.memory.InMemoryAgentMemoryManager;
+import io.relay.memory.FileBasedAgentMemoryManager;
+import io.relay.tool.AutoMemoryTools;
 import io.relay.memory.entity.EntityMemoryStore;
 import io.relay.memory.entity.InMemoryEntityMemoryStore;
 import io.relay.memory.persona.InMemoryPersonaStore;
@@ -252,6 +254,31 @@ public class RelayAutoConfiguration {
     }
 
     // ─── Memory Beans ─────────────────────────────────────────────────────────
+
+    /**
+     * File-based agent memory manager — persists agent memories to a structured local directory
+     * across JVM restarts. Activated when relay.memory.type=file.
+     *
+     * @param objectMapper the shared ObjectMapper for serialization
+     * @return a new {@link FileBasedAgentMemoryManager}
+     */
+    @Bean
+    @ConditionalOnProperty(name = "relay.memory.type", havingValue = "file")
+    public AgentMemoryManager fileBasedAgentMemoryManager(final ObjectMapper objectMapper) {
+        return new FileBasedAgentMemoryManager(objectMapper, null);
+    }
+
+    /**
+     * AutoMemoryTools bean — exposes the sandboxed Claude API memory tools.
+     * Automatically auto-discovered and registered by AutoDiscoveryToolConfig.
+     *
+     * @return a new {@link AutoMemoryTools} instance
+     */
+    @Bean
+    @ConditionalOnProperty(name = "relay.memory.type", havingValue = "file")
+    public AutoMemoryTools autoMemoryTools() {
+        return new AutoMemoryTools(null);
+    }
 
     /**
      * In-memory agent memory manager — the default Memory Manager when no custom

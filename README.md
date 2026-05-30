@@ -5,8 +5,8 @@
 **Production-ready, extensible foundation for building AI agents on Spring AI**
 
 [![Java 21](https://img.shields.io/badge/Java-21-orange?logo=openjdk)](https://openjdk.org/projects/jdk/21/)
-[![Spring Boot 3.5](https://img.shields.io/badge/Spring%20Boot-3.5.x-6db33f?logo=springboot)](https://spring.io/projects/spring-boot)
-[![Spring AI 1.0](https://img.shields.io/badge/Spring%20AI-1.0.0-6db33f)](https://spring.io/projects/spring-ai)
+[![Spring Boot 4.0](https://img.shields.io/badge/Spring%20Boot-4.0.x-6db33f?logo=springboot)](https://spring.io/projects/spring-boot)
+[![Spring AI 2.0](https://img.shields.io/badge/Spring%20AI-2.0.0--M8-6db33f)](https://spring.io/projects/spring-ai)
 [![License](https://img.shields.io/badge/License-private-lightgrey)](LICENSE)
 
 Relay is a Spring Boot library that gives you batteries-included scaffolding to build, run, and scale production AI agents — without writing the same boilerplate every time.
@@ -23,9 +23,9 @@ Building an AI agent from scratch means wiring together LLM calls, session state
 
 Relay gives you all of that — tested, observable, and extensible — as a set of focused Maven modules. You focus on what your agent *does*; Relay handles how it *runs*.
 
-| Capability | What you get |
+| Capabilty | What you get |
 |---|---|
-| 🧠 **5-tier memory system** | Entity facts · Persona profiles · Workflow memory · Knowledge base · Session context |
+| 🧠 **5-tier memory system** | Entity facts · Persona profiles · Workflow memory · Knowledge base · Session context · **Durable File-based Persistence & Sandboxed AutoMemoryTools** |
 | 🔗 **7 built-in advisors** | Rate limiting · Circuit breaker · RAG (auto-wired) · Memory injection · Confirmation gate · Audit · Thinking |
 | 🤝 **Agent-to-Agent (A2A)** | HTTP-native protocol for multi-agent fan-out with SSE streaming and pluggable auth |
 | 🗄️ **Swappable store backends** | In-memory (dev) → JPA → Redis → your own, zero code changes |
@@ -57,7 +57,7 @@ Relay is structured as a multi-module Maven project. Import the BOM and pick exa
         <dependency>
             <groupId>io.relay</groupId>
             <artifactId>relay-bom</artifactId>
-            <version>1.0.5</version>
+            <version>1.0.7-SNAPSHOT</version>
             <type>pom</type>
             <scope>import</scope>
         </dependency>
@@ -204,7 +204,7 @@ io.relay
 ### Prerequisites
 
 - Java 21+
-- Spring Boot 3.5.x
+- Spring Boot 4.0.x
 - Maven 3.8+
 
 ### 1. Import the BOM and add the orchestrator dependency
@@ -215,7 +215,7 @@ io.relay
         <dependency>
             <groupId>io.relay</groupId>
             <artifactId>relay-bom</artifactId>
-            <version>1.0.5</version>
+            <version>1.0.7-SNAPSHOT</version>
             <type>pom</type>
             <scope>import</scope>
         </dependency>
@@ -245,16 +245,41 @@ io.relay
 ### 2. Configure your LLM
 
 ```yaml
-agent:
+relay:
   llm:
-    gateway-base-url: https://api.openai.com
-    api-key: ${OPENAI_API_KEY}
-    reasoning-model:
-      provider: openai
-      model: gpt-4o
-    utility-model:
-      provider: openai
-      model: gpt-4o-mini
+    gateway-base-url: https://generativelanguage.googleapis.com
+    api-key: ${GEMINI_API_KEY:}
+    default-provider: google
+    # Resilient multi-provider failover chains (mitigates rate limits)
+    reasoning-models:
+      - provider: google
+        model: gemini-2.5-flash
+        version: latest
+        gateway-base-url: https://generativelanguage.googleapis.com
+        api-key: ${GEMINI_API_KEY:}
+      - provider: openai
+        model: gpt-4o
+        version: "2024-05-13"
+        api-version: "2024-02-01"
+        gateway-base-url: https://api.openai.com
+        api-key: ${OPENAI_API_KEY:}
+    utility-models:
+      - provider: google
+        model: gemini-2.5-flash
+        version: latest
+        gateway-base-url: https://generativelanguage.googleapis.com
+        api-key: ${GEMINI_API_KEY:}
+      - provider: openai
+        model: gpt-4o-mini
+        version: "2024-07-18"
+        api-version: "2024-02-01"
+        gateway-base-url: https://api.openai.com
+        api-key: ${OPENAI_API_KEY:}
+  
+  # Durable, persistent file-based memories (survives app restarts)
+  memory:
+    type: file
+    dir: ${user.home}/.superagent/memory
 ```
 
 ### 3. Define your session entity
@@ -351,11 +376,21 @@ Relay provides a **5-tier memory hierarchy** that persists knowledge across sess
 | `KNOWLEDGE` | Global          | Domain facts, RAG-ingested documents              |
 | `SESSION`   | Current session | Working memory, conversation-local state          |
 
-```java
-memory.remember(MemoryEntry.builder()
-        .sessionId(sessionId).userId(userId)
-        .type(MemoryType.ENTITY).content(fact).build());
+#### Durable File-based Persistence (`FileBasedAgentMemoryManager`)
+By default, memory is transient in-memory. By setting `relay.memory.type=file`, all memory entities, user personas, and past workflows are persisted as structured `.json` files under `sessions/{sessionId}` and `users/{userId}` subfolders of the configured memories directory. This ensures session state persists completely across restarts.
 
+#### Sandboxed Agent Memory Tools (`AutoMemoryTools`)
+Exposes the **Claude API / Claude Code sandboxed memory tools** specification directly as a first-class `@AgentTool` bean. Annotated with `requiresSession = true` and protected under MCP mutation guards, these tools allow the agent to self-curate its own persistent index (`MEMORY.md`) and topic files securely:
+* `memoryView` — reads a file with line numbers or lists sandboxed folders 2 levels deep
+* `memoryCreate` — creates a new memory file with YAML frontmatter
+* `memoryStrReplace` — performs exact search-and-replace editing on memory files
+* `memoryInsert` — inserts text lines at specific positions (essential for updating index lists)
+* `memoryDelete` — recursively deletes files or folders
+* `memoryRename` — renames or moves memory files
+
+```java
+// Persistence works out of the box
+memory.remember(MemoryEntry.of(MemoryType.ENTITY, sessionId, userId, fact));
 List<MemoryEntry> relevant = memory.recall(sessionId, userId, MemoryType.WORKFLOW, query, 5);
 ```
 
@@ -612,7 +647,7 @@ agent:
     type: inmemory              # inmemory | redis
     ttl: 30m                    # global entry TTL
     tool-ttl: 5m                # tool result TTL override (optional)
-    key-prefix: "agent:cache:"
+    key-prefix: "relay:cache:"
     inmemory:
       max-entries: 10000
       eviction-policy: LRU      # LRU | LFU | FIFO

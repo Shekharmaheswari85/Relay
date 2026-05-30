@@ -10,8 +10,8 @@ package io.relay.checkpoint;
 import java.util.Map;
 import java.util.Optional;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.ObjectMapper;
 import io.relay.model.BaseAgentSession;
 import io.relay.model.BaseToolResultCache;
 import io.relay.session.SessionContextManager;
@@ -168,7 +168,7 @@ public abstract class BaseToolResultCacheService<S extends BaseAgentSession, C e
                     session.setContextJson(objectMapper.writeValueAsString(context));
                     getSessionStore().save(session);
                     log.debug("Cleaned legacy tool_execution_cache key from contextJson for session {}", sessionId);
-                } catch (JsonProcessingException e) {
+                } catch (JacksonException e) {
                     log.error("Failed to clean legacy cache key for session {}: {}", sessionId, e.getMessage());
                 }
             }
@@ -198,7 +198,7 @@ public abstract class BaseToolResultCacheService<S extends BaseAgentSession, C e
                 session.setContextJson(objectMapper.writeValueAsString(context));
                 getSessionStore().save(session);
                 log.debug("Cached {} summary for session {}", toolName, sessionId);
-            } catch (JsonProcessingException ex) {
+            } catch (JacksonException ex) {
                 log.warn("Failed caching {} summary for session {}: {}", toolName, sessionId, ex.getMessage());
             }
         });
@@ -229,7 +229,7 @@ public abstract class BaseToolResultCacheService<S extends BaseAgentSession, C e
         try {
             String json = objectMapper.writeValueAsString(params);
             return Integer.toHexString((toolName + ":" + json).hashCode());
-        } catch (JsonProcessingException e) {
+        } catch (JacksonException e) {
             log.warn("Failed to compute input hash for {}: {}", toolName, e.getMessage());
             return "unknown";
         }

@@ -125,11 +125,23 @@ public class AgentLlmProperties {
     private ModelConfig reasoningModel;
 
     /**
+     * Resilient list of fallback model coordinates for the reasoning tier.
+     * If configured, a FailoverChatModel is built to retry requests across providers.
+     */
+    private List<ModelConfig> reasoningModels = new ArrayList<>();
+
+    /**
      * Model coordinates for the {@link io.relay.llm.ModelTier#UTILITY} tier.
      * Used by {@code ChatClientAutoConfiguration} to build the cost-effective client.
      * When absent, the utility client falls back to the reasoning client.
      */
     private ModelConfig utilityModel;
+
+    /**
+     * Resilient list of fallback model coordinates for the utility tier.
+     * If configured, a FailoverChatModel is built to retry requests across providers.
+     */
+    private List<ModelConfig> utilityModels = new ArrayList<>();
 
     /**
      * Additional model configurations available for explicit provider lookup via
@@ -219,6 +231,18 @@ public class AgentLlmProperties {
          * unless a custom path strategy is used.
          */
         private String apiVersion;
+
+        /**
+         * Optional gateway base URL override for this specific model configuration.
+         * If specified, bypasses the global relay.llm.gateway-base-url.
+         */
+        private String gatewayBaseUrl;
+
+        /**
+         * Optional API key override for this specific model configuration.
+         * If specified, bypasses the global relay.llm.api-key.
+         */
+        private String apiKey;
 
         /**
          * Additional static headers applied for this specific provider/model configuration.

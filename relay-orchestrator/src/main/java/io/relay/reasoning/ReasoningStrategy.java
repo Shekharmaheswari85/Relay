@@ -77,9 +77,14 @@ public enum ReasoningStrategy {
     /**
      * Chain-of-Thought — the model is prompted to "think step by step" before answering.
      *
-     * <p>Telemetry is surfaced in the advisor chain by {@link io.relay.advisor.ThinkingAdvisor}.
-     * For explicit CoT prompting, inject step-by-step instructions into the system prompt via
-     * {@link io.relay.config.AgentSystemPromptProvider}.
+     * <p>Supported via two paradigms in the Relay framework:
+     * <ol>
+     *   <li><b>Model-based / Streaming</b> — Telemetry is surfaced in the advisor chain by
+     *       {@link io.relay.advisor.ThinkingAdvisor} and streamed via {@link io.relay.stream.ThinkingStreamParser}
+     *       which extracts {@code <think>} tags in real-time.</li>
+     *   <li><b>Programmatic / Linear Pipeline</b> — Orchestrated by {@link ChainOfThoughtPipeline}
+     *       running sequential discrete {@link ReasoningStep}s carrying shared memory context.</li>
+     * </ol>
      */
     CHAIN_OF_THOUGHT,
 

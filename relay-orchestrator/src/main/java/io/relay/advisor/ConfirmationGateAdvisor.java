@@ -28,7 +28,7 @@ import org.springframework.ai.tool.annotation.Tool;
 import org.springframework.context.ApplicationContext;
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.AnnotatedElementUtils;
-import org.springframework.lang.NonNull;
+import org.jspecify.annotations.NonNull;
 import org.springframework.stereotype.Component;
 
 import io.relay.tool.AgentTool;

@@ -10,7 +10,7 @@ package io.relay.cache;
 import java.time.Duration;
 import java.util.Optional;
 
-import org.springframework.lang.Nullable;
+import org.jspecify.annotations.Nullable;
 
 import lombok.extern.slf4j.Slf4j;
 

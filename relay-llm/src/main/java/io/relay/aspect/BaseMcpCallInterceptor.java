@@ -20,7 +20,7 @@ import org.springframework.ai.tool.annotation.Tool;
 import org.springframework.ai.tool.definition.ToolDefinition;
 import org.springframework.context.ApplicationContext;
 import org.springframework.core.annotation.AnnotatedElementUtils;
-import org.springframework.lang.NonNull;
+import org.jspecify.annotations.NonNull;
 
 import io.relay.exception.McpDirectMutationBlockedException;
 import io.relay.session.SessionContextHolder;

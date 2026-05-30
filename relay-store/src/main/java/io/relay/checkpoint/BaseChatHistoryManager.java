@@ -13,8 +13,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.ObjectMapper;
 import io.relay.model.BaseAgentSession;
 import io.relay.repository.BaseAgentSessionRepository;
 import io.relay.session.SessionContextManager;
@@ -133,7 +133,7 @@ public abstract class BaseChatHistoryManager<S extends BaseAgentSession> {
 
             // Sync back to caller's session object
             syncSessionState(session, sessionToUpdate);
-        } catch (JsonProcessingException e) {
+        } catch (JacksonException e) {
             log.error("Failed to persist chat turn for session {}: {}", session.getSessionId(), e.getMessage());
         }
     }
@@ -166,7 +166,7 @@ public abstract class BaseChatHistoryManager<S extends BaseAgentSession> {
                 session.setContextJson(objectMapper.writeValueAsString(context));
                 getSessionRepository().save(session);
                 log.info("Chat history cleared for session {}", sessionId);
-            } catch (JsonProcessingException e) {
+            } catch (JacksonException e) {
                 log.error("Failed to clear chat history for session {}: {}", sessionId, e.getMessage());
             }
         });
