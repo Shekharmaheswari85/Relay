@@ -114,8 +114,7 @@ jobs:
         run: |
           mvn -B deploy \
             -DskipTests \
-            -DaltDeploymentRepository=github::https://maven.pkg.github.com/${{ github.repository }} \
-            -s "$GITHUB_WORKSPACE/settings.xml"
+            -DaltDeploymentRepository=github::default::https://maven.pkg.github.com/${{ github.repository }}
         env:
           GITHUB_TOKEN: ${{ secrets.GH_PACKAGES_TOKEN || github.token }}
 
