@@ -199,6 +199,11 @@ public class SuperAgentIntegrationTest {
         }
 
         @Bean
+        public ObjectMapper objectMapper() {
+            return new ObjectMapper();
+        }
+
+        @Bean
         public ToolProgressPublisher toolProgressPublisher() {
             return new ToolProgressPublisher();
         }

@@ -127,7 +127,6 @@
                     <target>${java.version}</target>
                     <release>${java.version}</release>
                     <parameters>true</parameters>
-                    <forceLegacyJavacApi>true</forceLegacyJavacApi>
                     <annotationProcessorPaths>
                         <path>
                             <groupId>org.projectlombok</groupId>
@@ -246,6 +245,7 @@
                 <configuration>
                     <targetJdk>${java.version}</targetJdk>
                     <skip>${pmd.skip}</skip>
+                    <typeResolution>false</typeResolution>
                     <failOnViolation>true</failOnViolation>
                     <linkXRef>false</linkXRef>
                     <printFailingErrors>true</printFailingErrors>
