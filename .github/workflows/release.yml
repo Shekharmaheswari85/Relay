@@ -15,6 +15,9 @@ name: Release
 #   9. Creates GitHub Release with auto-generated notes
 
 on:
+  push:
+    tags:
+      - 'v*'
   workflow_dispatch:
     inputs:
       bump_type:
