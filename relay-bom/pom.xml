@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>io.relay</groupId>
+        <artifactId>relay-parent</artifactId>
+        <version>${revision}</version>
+    </parent>
+
+    <artifactId>relay-bom</artifactId>
+    <packaging>pom</packaging>
+    <name>Relay :: BOM</name>
+    <description>Bill of Materials — import this in your project to align all Relay module versions.</description>
+
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>io.relay</groupId>
+                <artifactId>relay-core</artifactId>
+                <version>${revision}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.relay</groupId>
+                <artifactId>relay-cache</artifactId>
+                <version>${revision}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.relay</groupId>
+                <artifactId>relay-store</artifactId>
+                <version>${revision}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.relay</groupId>
+                <artifactId>relay-llm</artifactId>
+                <version>${revision}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.relay</groupId>
+                <artifactId>relay-orchestrator</artifactId>
+                <version>${revision}</version>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
+</project>

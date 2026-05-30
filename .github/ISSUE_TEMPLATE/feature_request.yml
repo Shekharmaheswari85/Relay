@@ -1,0 +1,63 @@
+name: Feature Request
+description: Suggest a new capability or improvement
+labels: ["enhancement"]
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Got an idea for Relay? Describe it below.
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem or motivation
+      description: What problem does this solve? What's the current pain point?
+      placeholder: "Today I have to manually X every time I want to Y, which is error-prone because..."
+    validations:
+      required: true
+
+  - type: textarea
+    id: solution
+    attributes:
+      label: Proposed solution
+      description: What should the feature look like? API sketch, config, or description.
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: Any workarounds you've tried or other approaches you evaluated.
+    validations:
+      required: false
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area of the framework
+      multiple: true
+      options:
+        - Memory
+        - Advisors
+        - Orchestrator
+        - A2A / Multi-agent
+        - Caching
+        - Persistence / Store
+        - LLM / Provider
+        - Reasoning strategies
+        - RAG
+        - Observability
+        - Tooling / @AgentTool
+        - Configuration
+        - Other
+    validations:
+      required: true
+
+  - type: textarea
+    id: additional
+    attributes:
+      label: Additional context
+    validations:
+      required: false

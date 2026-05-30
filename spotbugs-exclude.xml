@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+    SpotBugs exclusion filter for Relay.
+
+    Excludes:
+      - Lombok-generated synthetic methods (builders, constructors, equals/hashCode)
+      - In-memory test store classes (intentional mutable state in test utilities)
+      - False positives from Spring Boot auto-configuration patterns
+
+    Reference: https://spotbugs.readthedocs.io/en/stable/filter.html
+-->
+<FindBugsFilter
+        xmlns="https://github.com/spotbugs/filter/3.0.0"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="https://github.com/spotbugs/filter/3.0.0
+            https://raw.githubusercontent.com/spotbugs/spotbugs/master/spotbugs/etc/findbugsfilter.xsd">
+
+    <!-- ── Lombok-generated code ────────────────────────────────────────────── -->
+    <!-- Lombok @Builder generates inner static classes with mutable fields.
+         SpotBugs flags these as EI_EXPOSE_REP2 — safe to suppress. -->
+    <Match>
+        <Class name="~.*\$.*Builder"/>
+        <Bug pattern="EI_EXPOSE_REP,EI_EXPOSE_REP2"/>
+    </Match>
+
+    <!-- ── Test utilities (io.relay.test.*) ─────────────────────────────── -->
+    <!-- In-memory stores intentionally hold mutable shared state for test use. -->
+    <Match>
+        <Package name="io.relay.test"/>
+        <Bug pattern="EI_EXPOSE_REP,EI_EXPOSE_REP2,MS_EXPOSE_REP"/>
+    </Match>
+
+    <!-- ── Spring auto-configuration (@SuppressWarnings("rawtypes")) ─────────── -->
+    <!-- Raw generic types in @Bean factory methods inside JpaStoreConfiguration
+         are required by Spring's conditional bean registration API. -->
+    <Match>
+        <Class name="io.relay.config.RelayAutoConfiguration$JpaStoreConfiguration"/>
+        <Bug pattern="HE_EQUALS_USE_HASHCODE,BC_UNCONFIRMED_CAST_OF_RETURN_VALUE"/>
+    </Match>
+
+    <!-- ── A2A record types ─────────────────────────────────────────────────── -->
+    <!-- Java records expose their fields by design; EI warnings are expected.
+         All fields in these records are immutable (String / primitives). -->
+    <Match>
+        <Class name="~io\.relay\.a2a\.(SseEvent|CreateSessionRequest|CreateSessionResponse|SendMessageRequest)"/>
+        <Bug pattern="EI_EXPOSE_REP,EI_EXPOSE_REP2"/>
+    </Match>
+
+    <!-- ── DTO / properties models with mutable collection fields ───────────── -->
+    <!-- These are transport/config models hydrated by frameworks (Jackson/Spring Boot).
+         We intentionally allow mutable lists/maps for binding ergonomics. -->
+    <Match>
+        <Class name="~io\.relay\.(dto|config|a2a)\..*"/>
+        <Bug pattern="EI_EXPOSE_REP,EI_EXPOSE_REP2"/>
+    </Match>
+
+    <!-- ── Dependency injection constructors/setters ─────────────────────────── -->
+    <!-- SpotBugs flags constructor/setter assignment of Spring beans as EI_EXPOSE_REP2.
+         For managed singleton collaborators this is expected and safe. -->
+    <Match>
+        <Class name="~io\.relay\.(aspect|cache|checkpoint|config|lifecycle|observability|orchestrator|parser|prompt|session|store|tool|web)\..*"/>
+        <Bug pattern="EI_EXPOSE_REP2"/>
+    </Match>
+
+    <!-- ── Mutable execution context container ───────────────────────────────── -->
+    <Match>
+        <Class name="io.relay.agent.AgentExecutionContext"/>
+        <Bug pattern="EI_EXPOSE_REP,EI_EXPOSE_REP2"/>
+    </Match>
+
+</FindBugsFilter>

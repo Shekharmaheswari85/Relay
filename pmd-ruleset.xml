@@ -1,0 +1,35 @@
+<?xml version="1.0"?>
+<!--
+    PMD custom ruleset for relay.
+
+    Starts from the standard category rulesets and excludes rules that produce
+    unavoidable false positives in a Spring Boot framework library:
+
+      - Lombok-generated code triggers several style rules
+      - Abstract base classes (BaseAgentSession, BaseSessionLifecycleService, etc.)
+        legitimately use protected fields and unchecked casts in generic patterns
+      - Spring @Configuration classes use method-level coupling patterns by design
+
+    Reference: https://docs.pmd-code.org/latest/pmd_userdocs_making_rulesets.html
+-->
+<ruleset name="relay-rules"
+         xmlns="http://pmd.sourceforge.net/ruleset/2.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://pmd.sourceforge.net/ruleset/2.0.0
+             https://pmd.sourceforge.io/ruleset_2_0_0.xsd">
+
+    <description>relay PMD ruleset</description>
+
+    <!-- PMD 7 category defaults are too style-heavy for this framework project.
+         CI should block only correctness/resource-safety bugs, not naming/style churn. -->
+
+    <!-- ── Error Prone (high-signal subset) ─────────────────────────────────── -->
+    <rule ref="category/java/errorprone.xml/CompareObjectsWithEquals"/>
+    <rule ref="category/java/errorprone.xml/ReturnEmptyCollectionRatherThanNull"/>
+    <rule ref="category/java/errorprone.xml/CloseResource"/>
+    <rule ref="category/java/errorprone.xml/AvoidCatchingThrowable"/>
+
+    <!-- ── Security ──────────────────────────────────────────────────────────── -->
+    <rule ref="category/java/security.xml"/>
+
+</ruleset>

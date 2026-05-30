@@ -1,0 +1,58 @@
+name: Publish Snapshot
+
+# Publishes the current -SNAPSHOT artifact to GitHub Packages whenever
+# a commit lands on main. Commits with [skip ci] are skipped automatically.
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  snapshot:
+    name: Publish SNAPSHOT
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+          cache: 'maven'
+          server-id: github
+          settings-path: ${{ github.workspace }}
+
+      - name: Read version
+        id: version
+        run: |
+          VERSION=$(mvn help:evaluate -Dexpression=revision -q -DforceStdout)
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          if [[ "$VERSION" == *"-SNAPSHOT" ]]; then
+            echo "is_snapshot=true" >> "$GITHUB_OUTPUT"
+            echo "Publishing SNAPSHOT: $VERSION"
+          else
+            echo "is_snapshot=false" >> "$GITHUB_OUTPUT"
+            echo "Version '$VERSION' is a release — skipping SNAPSHOT publish."
+          fi
+
+      - name: Build & publish SNAPSHOT to GitHub Packages
+        if: steps.version.outputs.is_snapshot == 'true'
+        run: |
+          mvn -B deploy \
+            -DskipTests \
+            -Dspotbugs.skip=true \
+            -Dpmd.skip=true \
+            -DaltDeploymentRepository=github::https://maven.pkg.github.com/${{ github.repository }} \
+            -s "$GITHUB_WORKSPACE/settings.xml"
+        env:
+          # Use GH_PACKAGES_TOKEN (PAT with write:packages) if set, else fall back to GITHUB_TOKEN.
+          # If seeing 401s, go to the package settings page → Manage Actions access → grant Agent-Core Write.
+          GITHUB_TOKEN: ${{ secrets.GH_PACKAGES_TOKEN || github.token }}

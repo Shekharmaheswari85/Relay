@@ -1,0 +1,47 @@
+site_name: Relay
+site_description: Enterprise agentic LLM orchestration framework built on Spring AI
+site_author: Shekhar Maheswari
+site_url: https://shekharmaheswari85.github.io/Relay
+
+theme:
+  name: material
+  palette:
+    # Sleek modern dark mode by default
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: deep purple
+      accent: indigo
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: deep purple
+      accent: indigo
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+  features:
+    - navigation.tabs
+    - navigation.sections
+    - navigation.expand
+    - navigation.top
+    - search.suggest
+    - search.highlight
+    - content.code.copy
+
+markdown_extensions:
+  - pymdownx.highlight:
+      anchor_linenums: true
+      line_spans: __span
+      pygments_lang_class: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - pymdownx.superfences
+  - admonition
+  - def_list
+  - attr_list
+  - md_in_html
+
+nav:
+  - Welcome: index.md
