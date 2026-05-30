@@ -22,8 +22,8 @@
 
     <licenses>
         <license>
-            <name>Private - All Rights Reserved</name>
-            <url>https://github.com/Shekharmaheswari85/Relay/blob/main/LICENSE</url>
+            <name>Apache License 2.0</name>
+            <url>https://www.apache.org/licenses/LICENSE-2.0</url>
             <distribution>repo</distribution>
         </license>
     </licenses>
@@ -134,6 +134,15 @@
             </dependency>
         </dependencies>
     </dependencyManagement>
+
+    <distributionManagement>
+        <repository>
+            <id>central</id>
+            <name>Central Repository</name>
+            <url>https://central.sonatype.com/api/v1/publisher</url>
+        </repository>
+    </distributionManagement>
+
     <build>
         <plugins>
             <plugin>
@@ -227,7 +236,7 @@
                     </execution>
                 </executions>
             </plugin>
-            <!-- ─── SpotBugs ──────────────────────────────────────────────────────────
+            <!-- ─── SpotBugs ─────────────────────────────────────────────────────[...]
                  Run standalone : mvn spotbugs:check
                  Run in CI      : mvn verify
             -->
@@ -252,7 +261,7 @@
                     </execution>
                 </executions>
             </plugin>
-            <!-- ─── PMD ──────────────────────────────────────────────────────────────
+            <!-- ─── PMD ────────────────────────────────────────────────────────[...]
                  Run standalone : mvn pmd:check  /  mvn pmd:cpd-check
                  Run in CI      : mvn verify
             -->
