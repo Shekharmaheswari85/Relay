@@ -23,7 +23,7 @@ import java.util.stream.Stream;
  * so sharing one instance gives better connection reuse than creating a new client per call.
  *
  * <p>Registered as a Spring {@code @Bean} by {@link AgentClientRegistry.AutoConfig} when
- * {@code agent.a2a.enabled=true}. Override by declaring your own {@code A2AHttpClient} bean
+ * {@code relay.a2a.enabled=true}. Override by declaring your own {@code A2AHttpClient} bean
  * (e.g., with custom TLS settings or a proxy).
  *
  * <h3>Thread safety</h3>

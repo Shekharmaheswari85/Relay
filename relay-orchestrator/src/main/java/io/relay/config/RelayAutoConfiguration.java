@@ -88,7 +88,7 @@ import lombok.extern.slf4j.Slf4j;
  *
  * <p>Automatically configures:
  * <ul>
- *   <li>Cache backend based on {@code agent.cache.type}</li>
+ *   <li>Cache backend based on {@code relay.cache.type}</li>
  *   <li>Virtual thread executor for LLM and pipeline operations</li>
  *   <li>Tool result cache</li>
  *   <li>Prompt loader and tool tier registry</li>
@@ -126,11 +126,11 @@ public class RelayAutoConfiguration {
     // ─── Cache Beans ──────────────────────────────────────────────────────────
 
     /**
-     * In-memory agent cache (default when {@code agent.cache.type} is {@code inmemory}
+     * In-memory agent cache (default when {@code relay.cache.type} is {@code inmemory}
      * or not set).
      *
-     * <p>Backed by Caffeine. Configurable via {@code agent.cache.inmemory.max-entries}
-     * and {@code agent.cache.ttl}.
+     * <p>Backed by Caffeine. Configurable via {@code relay.cache.inmemory.max-entries}
+     * and {@code relay.cache.ttl}.
      *
      * @param objectMapper the Jackson {@link ObjectMapper} used for value serialization
      * @return an {@link InMemoryAgentCache} configured from {@link RelayProperties}
@@ -144,7 +144,7 @@ public class RelayAutoConfiguration {
     }
 
     /**
-     * Redis-backed agent cache (activated when {@code agent.cache.type=redis}).
+     * Redis-backed agent cache (activated when {@code relay.cache.type=redis}).
      *
      * <p>Requires {@code spring-boot-starter-data-redis} on the classpath and a
      * configured {@link RedisConnectionFactory}.
@@ -190,8 +190,8 @@ public class RelayAutoConfiguration {
     /**
      * Tool result cache wrapping the configured {@link AgentCache}.
      *
-     * <p>When {@code agent.cache.tool-ttl} is set, tool result entries use that dedicated
-     * TTL instead of the global {@code agent.cache.ttl}. This is useful when tool outputs
+     * <p>When {@code relay.cache.tool-ttl} is set, tool result entries use that dedicated
+     * TTL instead of the global {@code relay.cache.ttl}. This is useful when tool outputs
      * are short-lived (e.g., live inventory data) while other cache entries should persist
      * longer (e.g., persona data).
      *
@@ -330,14 +330,14 @@ public class RelayAutoConfiguration {
      * into {@link io.relay.orchestrator.BaseAgentOrchestrator} and any other component
      * that needs to submit work outside the current request thread.
      *
-     * <p>Activated when {@code agent.virtual-threads.enabled} is {@code true} (the default).
+     * <p>Activated when {@code relay.virtual-threads.enabled} is {@code true} (the default).
      * Override with your own {@code ThreadPoolTaskExecutor} bean named
      * {@code "virtualThreadExecutor"} to customize pool settings.
      *
      * @return a {@link ThreadPoolTaskExecutor} configured to use virtual threads
      */
     @Bean("virtualThreadExecutor")
-    @ConditionalOnProperty(name = "agent.virtual-threads.enabled", havingValue = "true", matchIfMissing = true)
+    @ConditionalOnProperty(name = "relay.virtual-threads.enabled", havingValue = "true", matchIfMissing = true)
     @ConditionalOnMissingBean(name = "virtualThreadExecutor")
     public ThreadPoolTaskExecutor virtualThreadExecutor() {
         log.info("Virtual thread executor enabled for agent pipeline operations");
@@ -355,12 +355,12 @@ public class RelayAutoConfiguration {
      * {@code agent.*} metric, enabling dashboard filtering by environment, service name,
      * region, or any other dimension.
      *
-     * <p>Only activated when {@code agent.metrics.enabled=true} (the default) and at least
-     * one tag is configured under {@code agent.metrics.common-tags}.
+     * <p>Only activated when {@code relay.metrics.enabled=true} (the default) and at least
+     * one tag is configured under {@code relay.metrics.common-tags}.
      *
      * <h3>Configuration</h3>
      * <pre>{@code
-     * agent:
+     * relay:
      *   metrics:
      *     common-tags:
      *       service: order-agent
@@ -448,7 +448,7 @@ public class RelayAutoConfiguration {
 
     /**
      * Nested configuration that registers the default session expiry scheduler only when
-     * {@code agent.session.expiry.enabled=true} and the JPA starter is present.
+     * {@code relay.session.expiry.enabled=true} and the JPA starter is present.
      *
      * <p>{@code @EnableScheduling} is scoped to this class so that Spring's scheduling
      * post-processor is registered only when session expiry is actually needed, avoiding
@@ -456,7 +456,7 @@ public class RelayAutoConfiguration {
      */
     @Configuration(proxyBeanMethods = false)
     @ConditionalOnClass(name = "org.springframework.data.jpa.repository.JpaRepository")
-    @ConditionalOnProperty(name = "agent.session.expiry.enabled", havingValue = "true")
+    @ConditionalOnProperty(name = "relay.session.expiry.enabled", havingValue = "true")
     @EnableScheduling
     static class SessionExpiryConfiguration {
 

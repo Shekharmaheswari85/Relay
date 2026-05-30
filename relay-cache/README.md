@@ -14,7 +14,7 @@ This module provides the `AgentCache` interface and two concrete implementations
 
 ```xml
 <dependency>
-    <groupId>io.relay</groupId>
+    <groupId>io.github.shekharmaheswari85</groupId>
     <artifactId>relay-cache</artifactId>
 </dependency>
 ```
@@ -41,7 +41,7 @@ public interface AgentCache {
 ### In-memory (default)
 
 ```yaml
-agent:
+relay:
   cache:
     type: inmemory
     ttl: 30m                  # global entry TTL
@@ -54,7 +54,7 @@ agent:
 ### Redis (production / multi-pod)
 
 ```yaml
-agent:
+relay:
   cache:
     type: redis
     ttl: 30m
@@ -74,10 +74,10 @@ When `type: redis`, `RedisToolDedupCache` is also wired automatically. This prev
 
 ## Tool result cache TTL
 
-`DefaultToolResultCache` wraps `AgentCache` and adds session-scoped semantics. When `agent.cache.tool-ttl` is set, tool results use that duration; otherwise they inherit the global `ttl`:
+`DefaultToolResultCache` wraps `AgentCache` and adds session-scoped semantics. When `relay.cache.tool-ttl` is set, tool results use that duration; otherwise they inherit the global `ttl`:
 
 ```yaml
-agent:
+relay:
   cache:
     ttl: 30m        # persona data, session metadata, etc.
     tool-ttl: 5m    # tool results (live inventory, pricing) expire sooner

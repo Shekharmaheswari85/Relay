@@ -25,7 +25,7 @@ import lombok.Data;
  * {@code application.yml} to customise behaviour:
  *
  * <pre>{@code
- * agent:
+ * relay:
  *   cache:
  *     type: redis              # inmemory (default) | redis
  *     ttl: 30m
@@ -56,7 +56,7 @@ import lombok.Data;
  *
  * @see RelayAutoConfiguration
  */
-@ConfigurationProperties(prefix = "agent")
+@ConfigurationProperties(prefix = "relay")
 @Data
 public class RelayProperties {
 
@@ -72,27 +72,27 @@ public class RelayProperties {
     private static final int DEFAULT_CONTEXT_MAX_SIZE = 1_048_576; // 1MB
 
     /**
-     * Cache backend configuration ({@code agent.cache.*}).
+     * Cache backend configuration ({@code relay.cache.*}).
      */
     private CacheProperties cache = new CacheProperties();
 
     /**
-     * Session identity and size configuration ({@code agent.session.*}).
+     * Session identity and size configuration ({@code relay.session.*}).
      */
     private SessionProperties session = new SessionProperties();
 
     /**
-     * Virtual-thread runtime configuration ({@code agent.virtual-threads.*}).
+     * Virtual-thread runtime configuration ({@code relay.virtual-threads.*}).
      */
     private VirtualThreadProperties virtualThreads = new VirtualThreadProperties();
 
     /**
-     * Metrics and observability configuration ({@code agent.metrics.*}).
+     * Metrics and observability configuration ({@code relay.metrics.*}).
      */
     private MetricsProperties metrics = new MetricsProperties();
 
     /**
-     * Cache backend settings ({@code agent.cache.*}).
+     * Cache backend settings ({@code relay.cache.*}).
      */
     @Data
     public static class CacheProperties {
@@ -118,7 +118,7 @@ public class RelayProperties {
         private String keyPrefix = "agent:cache:";
 
         /**
-         * Dedicated time-to-live for tool result cache entries ({@code agent.cache.tool-ttl}).
+         * Dedicated time-to-live for tool result cache entries ({@code relay.cache.tool-ttl}).
          * When set, tool results expire after this duration regardless of the global
          * {@link #ttl}. When absent ({@code null}), tool results inherit the global TTL.
          * Accepts standard Spring {@link Duration} notation, e.g., {@code 10m}, {@code 2h}.
@@ -127,26 +127,26 @@ public class RelayProperties {
         private Duration toolTtl;
 
         /**
-         * Settings specific to the in-memory cache backend ({@code agent.cache.inmemory.*}).
-         * Only used when {@code agent.cache.type=inmemory}.
+         * Settings specific to the in-memory cache backend ({@code relay.cache.inmemory.*}).
+         * Only used when {@code relay.cache.type=inmemory}.
          */
         private InMemoryProperties inmemory = new InMemoryProperties();
 
         /**
-         * Settings specific to the Redis cache backend ({@code agent.cache.redis.*}).
-         * Only used when {@code agent.cache.type=redis}.
+         * Settings specific to the Redis cache backend ({@code relay.cache.redis.*}).
+         * Only used when {@code relay.cache.type=redis}.
          */
         private RedisProperties redis = new RedisProperties();
 
         /**
-         * Scheduled cache maintenance settings ({@code agent.cache.maintenance.*}).
+         * Scheduled cache maintenance settings ({@code relay.cache.maintenance.*}).
          * Disabled by default; enable for automatic eviction of stale entries.
          */
         private MaintenanceProperties maintenance = new MaintenanceProperties();
     }
 
     /**
-     * In-memory cache tuning ({@code agent.cache.inmemory.*}).
+     * In-memory cache tuning ({@code relay.cache.inmemory.*}).
      */
     @Data
     public static class InMemoryProperties {
@@ -165,7 +165,7 @@ public class RelayProperties {
     }
 
     /**
-     * Redis connection settings ({@code agent.cache.redis.*}).
+     * Redis connection settings ({@code relay.cache.redis.*}).
      */
     @Data
     public static class RedisProperties {
@@ -191,13 +191,13 @@ public class RelayProperties {
         private int database = 0;
 
         /**
-         * Connection pool settings ({@code agent.cache.redis.pool.*}).
+         * Connection pool settings ({@code relay.cache.redis.pool.*}).
          */
         private PoolProperties pool = new PoolProperties();
     }
 
     /**
-     * Redis connection pool settings ({@code agent.cache.redis.pool.*}).
+     * Redis connection pool settings ({@code relay.cache.redis.pool.*}).
      */
     @Data
     public static class PoolProperties {
@@ -219,7 +219,7 @@ public class RelayProperties {
     }
 
     /**
-     * Scheduled cache maintenance settings ({@code agent.cache.maintenance.*}).
+     * Scheduled cache maintenance settings ({@code relay.cache.maintenance.*}).
      */
     @Data
     public static class MaintenanceProperties {
@@ -249,7 +249,7 @@ public class RelayProperties {
     }
 
     /**
-     * Session identity settings ({@code agent.session.*}).
+     * Session identity settings ({@code relay.session.*}).
      */
     @Data
     public static class SessionProperties {
@@ -274,14 +274,14 @@ public class RelayProperties {
         private int contextMaxSize = DEFAULT_CONTEXT_MAX_SIZE;
 
         /**
-         * Automatic session expiry settings ({@code agent.session.expiry.*}).
+         * Automatic session expiry settings ({@code relay.session.expiry.*}).
          * Disabled by default; set {@code enabled: true} to activate the scheduler.
          */
         private ExpiryProperties expiry = new ExpiryProperties();
     }
 
     /**
-     * Session expiry scheduler settings ({@code agent.session.expiry.*}).
+     * Session expiry scheduler settings ({@code relay.session.expiry.*}).
      *
      * <p>When enabled, sessions that have not received any activity for longer than
      * {@link #idleHours} are automatically transitioned to
@@ -289,7 +289,7 @@ public class RelayProperties {
      * {@link io.relay.scheduler.DefaultSessionExpiryScheduler}.
      *
      * <pre>{@code
-     * agent:
+     * relay:
      *   session:
      *     expiry:
      *       enabled: true
@@ -323,7 +323,7 @@ public class RelayProperties {
     }
 
     /**
-     * Virtual-thread execution settings ({@code agent.virtual-threads.*}).
+     * Virtual-thread execution settings ({@code relay.virtual-threads.*}).
      */
     @Data
     public static class VirtualThreadProperties {
@@ -337,13 +337,13 @@ public class RelayProperties {
     }
 
     /**
-     * Metrics and observability settings ({@code agent.metrics.*}).
+     * Metrics and observability settings ({@code relay.metrics.*}).
      *
      * <p>Controls whether agent metrics are published and allows injecting common tags
      * into every {@code agent.*} metric for dashboard filtering.
      *
      * <pre>{@code
-     * agent:
+     * relay:
      *   metrics:
      *     enabled: true
      *     common-tags:

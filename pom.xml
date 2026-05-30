@@ -11,7 +11,7 @@
         <relativePath/>
     </parent>
 
-    <groupId>io.relay</groupId>
+    <groupId>io.github.shekharmaheswari85</groupId>
     <artifactId>relay-parent</artifactId>
     <version>${revision}</version>
     <packaging>pom</packaging>
@@ -23,9 +23,25 @@
     <licenses>
         <license>
             <name>Private - All Rights Reserved</name>
-            <url>UNLICENSED</url>
+            <url>https://github.com/Shekharmaheswari85/Relay/blob/main/LICENSE</url>
+            <distribution>repo</distribution>
         </license>
     </licenses>
+
+    <developers>
+        <developer>
+            <id>shekharmaheswari85</id>
+            <name>Shekhar Maheswari</name>
+            <url>https://github.com/Shekharmaheswari85</url>
+        </developer>
+    </developers>
+
+    <scm>
+        <connection>scm:git:https://github.com/Shekharmaheswari85/Relay.git</connection>
+        <developerConnection>scm:git:ssh://git@github.com/Shekharmaheswari85/Relay.git</developerConnection>
+        <url>https://github.com/Shekharmaheswari85/Relay</url>
+        <tag>HEAD</tag>
+    </scm>
 
     <modules>
         <module>relay-bom</module>
@@ -47,6 +63,8 @@
         <spotbugs-maven-plugin.version>4.9.8.3</spotbugs-maven-plugin.version>
         <maven-pmd-plugin.version>3.28.0</maven-pmd-plugin.version>
         <httpclient5.version>5.6.1</httpclient5.version>
+        <central-publishing-maven-plugin.version>0.10.0</central-publishing-maven-plugin.version>
+        <maven-gpg-plugin.version>3.2.8</maven-gpg-plugin.version>
         <!-- Skip flags — override from CI: -Dspotbugs.skip=false -Dpmd.skip=false -->
         <spotbugs.skip>false</spotbugs.skip>
         <pmd.skip>false</pmd.skip>
@@ -85,27 +103,27 @@
 
             <!-- Internal modules — all share ${revision} -->
             <dependency>
-                <groupId>io.relay</groupId>
+                <groupId>io.github.shekharmaheswari85</groupId>
                 <artifactId>relay-core</artifactId>
                 <version>${revision}</version>
             </dependency>
             <dependency>
-                <groupId>io.relay</groupId>
+                <groupId>io.github.shekharmaheswari85</groupId>
                 <artifactId>relay-cache</artifactId>
                 <version>${revision}</version>
             </dependency>
             <dependency>
-                <groupId>io.relay</groupId>
+                <groupId>io.github.shekharmaheswari85</groupId>
                 <artifactId>relay-store</artifactId>
                 <version>${revision}</version>
             </dependency>
             <dependency>
-                <groupId>io.relay</groupId>
+                <groupId>io.github.shekharmaheswari85</groupId>
                 <artifactId>relay-llm</artifactId>
                 <version>${revision}</version>
             </dependency>
             <dependency>
-                <groupId>io.relay</groupId>
+                <groupId>io.github.shekharmaheswari85</groupId>
                 <artifactId>relay-orchestrator</artifactId>
                 <version>${revision}</version>
             </dependency>
@@ -276,14 +294,6 @@
         </plugins>
     </build>
 
-    <distributionManagement>
-        <repository>
-            <id>github</id>
-            <name>GitHub Packages</name>
-            <url>https://maven.pkg.github.com/Shekharmaheswari85/Relay</url>
-        </repository>
-    </distributionManagement>
-
     <repositories>
         <repository>
             <id>spring-milestones</id>
@@ -313,6 +323,37 @@
             </activation>
             <build>
                 <plugins>
+                    <plugin>
+                        <groupId>org.sonatype.central</groupId>
+                        <artifactId>central-publishing-maven-plugin</artifactId>
+                        <version>${central-publishing-maven-plugin.version}</version>
+                        <extensions>true</extensions>
+                        <configuration>
+                            <publishingServerId>central</publishingServerId>
+                            <autoPublish>true</autoPublish>
+                            <waitUntil>published</waitUntil>
+                        </configuration>
+                    </plugin>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-gpg-plugin</artifactId>
+                        <version>${maven-gpg-plugin.version}</version>
+                        <executions>
+                            <execution>
+                                <id>sign-artifacts</id>
+                                <phase>verify</phase>
+                                <goals>
+                                    <goal>sign</goal>
+                                </goals>
+                                <configuration>
+                                    <gpgArguments>
+                                        <arg>--pinentry-mode</arg>
+                                        <arg>loopback</arg>
+                                    </gpgArguments>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
                     <plugin>
                         <groupId>org.codehaus.mojo</groupId>
                         <artifactId>flatten-maven-plugin</artifactId>

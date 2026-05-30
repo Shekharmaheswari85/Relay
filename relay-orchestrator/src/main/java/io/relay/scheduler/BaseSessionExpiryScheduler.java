@@ -35,7 +35,7 @@ import lombok.extern.slf4j.Slf4j;
  * @Component
  * public class MySessionExpiryScheduler extends BaseSessionExpiryScheduler<MySessionDO> {
  *
- *     @Value("${agent.session.expiry-hours:24}")
+ *     @Value("${relay.session.expiry-hours:24}")
  *     private long sessionExpiryHours;
  *
  *     public MySessionExpiryScheduler(MySessionRepository repository) {
@@ -57,7 +57,7 @@ import lombok.extern.slf4j.Slf4j;
  *         return "EXPIRED";
  *     }
  *
- *     @Scheduled(fixedDelayString = "${agent.session.expiry-check-interval-ms:3600000}")
+ *     @Scheduled(fixedDelayString = "${relay.session.expiry-check-interval-ms:3600000}")
  *     public void runExpiry() {
  *         expireInactiveSessions();
  *     }

@@ -21,7 +21,7 @@ This module bridges Spring AI's `ChatClient` with Relay's tool, streaming, and o
 
 ```xml
 <dependency>
-    <groupId>io.relay</groupId>
+    <groupId>io.github.shekharmaheswari85</groupId>
     <artifactId>relay-llm</artifactId>
 </dependency>
 
@@ -53,7 +53,7 @@ ChatClient customClient = chatClientRegistry.get("my-custom-model");
 Configuration:
 
 ```yaml
-agent:
+relay:
   llm:
     gateway-base-url: https://api.openai.com
     api-key: ${LLM_API_KEY}
@@ -67,27 +67,25 @@ agent:
 
 ## Tool System
 
-Mark any Spring bean method as an agent tool:
+Mark a Spring bean class as an agent tool, then annotate callable methods with Spring AI's `@Tool`:
 
 ```java
-@Component
+@AgentTool(category = ToolCategory.DISCOVERY)
 public class InventoryTools {
 
-    @AgentTool(
-        name        = "check_inventory",
-        description = "Returns the current stock level for a given SKU",
-        category    = ToolCategory.QUERY)
+    @Tool(description = "Returns the current stock level for a given SKU")
     public InventoryResult checkInventory(String sku) { ... }
+}
 
-    @AgentTool(
-        name        = "create_purchase_order",
-        description = "Creates a new purchase order — requires user confirmation",
-        category    = ToolCategory.MUTATION)
+@AgentTool(category = ToolCategory.MUTATION, requiresSession = true)
+public class PurchaseOrderTools {
+
+    @Tool(description = "Creates a new purchase order on behalf of the current session user")
     public PurchaseOrder createPurchaseOrder(String sku, int quantity) { ... }
 }
 ```
 
-- **`QUERY`** — executes immediately with result caching.
+- **`DISCOVERY`** — read-only tools that execute immediately with result caching.
 - **`MUTATION`** — intercepted by `ConfirmationGateAdvisor` in `relay-orchestrator`; requires explicit user confirmation.
 
 `AutoDiscoveryToolConfig` scans for all `@AgentTool`-annotated beans and registers them with Spring AI's tool registry automatically — no manual wiring.
@@ -148,11 +146,11 @@ observability.recordLlmCall("openai", "gpt-4o", "success");
 observability.recordToolCall("check_inventory", "success", Duration.ofMillis(120));
 ```
 
-Emits Micrometer metrics: `agent.llm.calls`, `agent.llm.duration`, `agent.tool.calls`, `agent.tool.duration`.
+Emits Micrometer metrics: `relay.llm.calls`, `relay.llm.duration`, `agent.tool.calls`, `agent.tool.duration`.
 
 ## Virtual Threads
 
-`VirtualThreadTaskExecutorUtil` creates a Spring `TaskExecutor` backed by Java 21 virtual threads. Activated automatically when `agent.virtual-threads.enabled: true` (default).
+`VirtualThreadTaskExecutorUtil` creates a Spring `TaskExecutor` backed by Java 21 virtual threads. Activated automatically when `relay.virtual-threads.enabled: true` (default).
 
 ## Test utilities (test scope)
 

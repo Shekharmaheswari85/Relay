@@ -18,7 +18,7 @@ import lombok.Data;
 
 /**
  * {@link org.springframework.boot.context.properties.ConfigurationProperties} binding for
- * the {@code agent.llm.*} namespace, which configures the LLM gateway connection, model
+ * the {@code relay.llm.*} namespace, which configures the LLM gateway connection, model
  * tiers, system prompts, SSL/TLS options, and audit headers.
  *
  * <p>These properties drive {@link io.relay.config.ChatClientAutoConfiguration}, which
@@ -27,7 +27,7 @@ import lombok.Data;
  *
  * <h3>Full configuration example</h3>
  * <pre>{@code
- * agent:
+ * relay:
  *   llm:
  *     gateway-base-url: https://api.openai.com
  *     api-key: ${LLM_API_KEY}
@@ -173,7 +173,7 @@ public class AgentLlmProperties {
      * not appear in this map.
      *
      * <pre>{@code
-     * agent:
+     * relay:
      *   llm:
      *     system-prompts:
      *       default: prompts/default-system-prompt.txt
@@ -189,7 +189,7 @@ public class AgentLlmProperties {
      * long conversation histories before they exceed the model's context window.
      *
      * <pre>{@code
-     * agent:
+     * relay:
      *   llm:
      *     summary-prompts:
      *       onboarding-market: prompts/onboarding-summary.txt
@@ -254,7 +254,7 @@ public class AgentLlmProperties {
     }
 
     /**
-     * TLS/SSL options for the LLM gateway HTTP client ({@code agent.llm.ssl.*}).
+     * TLS/SSL options for the LLM gateway HTTP client ({@code relay.llm.ssl.*}).
      */
     @Data
     public static class SslConfig {
@@ -284,7 +284,7 @@ public class AgentLlmProperties {
 
     /**
      * Audit identity headers forwarded to the LLM gateway on every request
-     * ({@code agent.llm.audit.*}).
+     * ({@code relay.llm.audit.*}).
      *
      * <p>These values are passed to registered {@link LlmGatewayHeadersContributor}
      * implementations, which map them to the gateway's specific header names.

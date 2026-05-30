@@ -5,7 +5,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <parent>
-        <groupId>io.relay</groupId>
+        <groupId>io.github.shekharmaheswari85</groupId>
         <artifactId>relay-parent</artifactId>
         <version>${revision}</version>
         <relativePath>../pom.xml</relativePath>
@@ -17,19 +17,19 @@
 
     <dependencies>
         <dependency>
-            <groupId>io.relay</groupId>
+            <groupId>io.github.shekharmaheswari85</groupId>
             <artifactId>relay-core</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.relay</groupId>
+            <groupId>io.github.shekharmaheswari85</groupId>
             <artifactId>relay-cache</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.relay</groupId>
+            <groupId>io.github.shekharmaheswari85</groupId>
             <artifactId>relay-store</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.relay</groupId>
+            <groupId>io.github.shekharmaheswari85</groupId>
             <artifactId>relay-llm</artifactId>
         </dependency>
 

@@ -30,7 +30,7 @@ package io.relay.summary;
  *
  * <h3>Built-in implementation</h3>
  * <p>{@link DefaultSummaryPromptProvider} reads prompt paths from
- * {@code agent.llm.summary-prompts} YAML configuration and is auto-registered when no
+ * {@code relay.llm.summary-prompts} YAML configuration and is auto-registered when no
  * other {@code SummaryPromptProvider} bean is present.
  *
  * @see DefaultSummaryPromptProvider

@@ -18,7 +18,7 @@ To add Relay to your project, include the Maven dependency:
 
 ```xml
 <dependency>
-    <groupId>io.relay</groupId>
+    <groupId>io.github.shekharmaheswari85</groupId>
     <artifactId>relay-orchestrator</artifactId>
     <version>1.0.7-SNAPSHOT</version>
 </dependency>

@@ -19,10 +19,10 @@ package io.relay.config;
  * <p>{@link DefaultAgentSystemPromptProvider} is registered automatically by
  * {@code ChatClientAutoConfiguration} when no custom bean of this type exists in the
  * application context.  It reads prompts from classpath files declared under
- * {@code agent.llm.system-prompts}:
+ * {@code relay.llm.system-prompts}:
  *
  * <pre>{@code
- * agent:
+ * relay:
  *   llm:
  *     system-prompts:
  *       default: prompts/default-system-prompt.txt       # used by ChatClientAutoConfiguration

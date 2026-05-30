@@ -21,12 +21,12 @@ import lombok.extern.slf4j.Slf4j;
  * of the generic cache abstraction.
  *
  * <p>When a {@code toolTtl} is supplied, every {@link #putToolResult} call uses that
- * duration instead of the global cache TTL configured in {@code agent.cache.ttl}.
+ * duration instead of the global cache TTL configured in {@code relay.cache.ttl}.
  * This allows tool results to expire sooner or later than other cached data.
  *
- * <p>Configure via {@code agent.cache.tool-ttl}:
+ * <p>Configure via {@code relay.cache.tool-ttl}:
  * <pre>{@code
- * agent:
+ * relay:
  *   cache:
  *     ttl: 30m            # global default
  *     tool-ttl: 5m        # tool results expire faster

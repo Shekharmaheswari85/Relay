@@ -79,7 +79,7 @@ public final class BasicAuthA2AAuthContributor implements A2AAuthContributor {
      * {@code agentName}.
      *
      * @param agentName the logical agent name (must match the key in
-     *                  {@code agent.a2a.clients}); must not be blank
+     *                  {@code relay.a2a.clients}); must not be blank
      * @param username  the Basic auth username; must not be null
      * @param password  the Basic auth password; must not be null
      */

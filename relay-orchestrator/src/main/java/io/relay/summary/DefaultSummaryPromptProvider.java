@@ -32,7 +32,7 @@ import lombok.extern.slf4j.Slf4j;
  *
  * <h3>YAML configuration</h3>
  * <pre>{@code
- * agent:
+ * relay:
  *   llm:
  *     summary-prompts:
  *       default:            prompts/default-summary.txt

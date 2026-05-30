@@ -57,7 +57,7 @@ public final class StaticBearerTokenA2AAuthContributor implements A2AAuthContrib
      * Creates a contributor that injects {@code token} only for calls to {@code agentName}.
      *
      * @param agentName the logical agent name (must match the key in
-     *                  {@code agent.a2a.clients}); must not be blank
+     *                  {@code relay.a2a.clients}); must not be blank
      * @param token     the Bearer token to inject; must not be blank
      */
     public StaticBearerTokenA2AAuthContributor(final String agentName, final String token) {

@@ -68,7 +68,7 @@ import io.relay.llm.LlmProvider;
 @SpringBootTest(properties = {
         "spring.jpa.show-sql=false",
         "relay.cache.type=inmemory",
-        "agent.virtual-threads.enabled=true",
+        "relay.virtual-threads.enabled=true",
         "spring.main.allow-bean-definition-overriding=true",
         "spring.ai.openai.api-key=test-key"
 })

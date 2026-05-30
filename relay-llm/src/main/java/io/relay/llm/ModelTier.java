@@ -40,7 +40,7 @@ package io.relay.llm;
  *
  * <h3>YAML configuration</h3>
  * <pre>{@code
- * agent:
+ * relay:
  *   llm:
  *     reasoning-model:
  *       provider: openai
@@ -71,7 +71,7 @@ public enum ModelTier {
      * more expensive per token and should be reserved for work where accuracy and
      * depth genuinely benefit from the extra capability.
      *
-     * <p>Configured via {@code agent.llm.reasoning-model} in {@code application.yml}.
+     * <p>Configured via {@code relay.llm.reasoning-model} in {@code application.yml}.
      */
     REASONING,
 
@@ -83,7 +83,7 @@ public enum ModelTier {
      * significantly cheaper per token and respond faster, making them suitable for
      * high-volume or latency-sensitive operations.
      *
-     * <p>Configured via {@code agent.llm.utility-model} in {@code application.yml}.
+     * <p>Configured via {@code relay.llm.utility-model} in {@code application.yml}.
      * Falls back to {@link #REASONING} if no utility model is configured.
      */
     UTILITY

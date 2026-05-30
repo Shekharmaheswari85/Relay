@@ -20,7 +20,7 @@ import lombok.extern.slf4j.Slf4j;
 
 /**
  * Default {@link AgentSystemPromptProvider} that resolves system prompts from
- * classpath files declared in {@code agent.llm.system-prompts}.
+ * classpath files declared in {@code relay.llm.system-prompts}.
  *
  * <p>This bean is registered automatically by {@code ChatClientAutoConfiguration}
  * and is suppressed via {@code @ConditionalOnMissingBean(AgentSystemPromptProvider.class)},
@@ -29,7 +29,7 @@ import lombok.extern.slf4j.Slf4j;
  * <h3>Configuration</h3>
  * <p>Map agent names to classpath-relative prompt file paths:
  * <pre>{@code
- * agent:
+ * relay:
  *   llm:
  *     system-prompts:
  *       default: prompts/default-system-prompt.txt
@@ -63,7 +63,7 @@ public class DefaultAgentSystemPromptProvider implements AgentSystemPromptProvid
     /**
      * Constructs the provider from the LLM properties.
      *
-     * @param properties the {@code agent.llm.*} configuration; the
+     * @param properties the {@code relay.llm.*} configuration; the
      *                   {@code system-prompts} map is read to discover which agent names
      *                   have prompt files configured
      */

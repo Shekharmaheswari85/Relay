@@ -17,13 +17,13 @@ import lombok.Data;
 /**
  * Configuration properties for the agent's A2A (Agent-to-Agent) identity card.
  *
- * <p>Set {@code agent.a2a.enabled=true} to activate the {@link AgentCardController}, which
+ * <p>Set {@code relay.a2a.enabled=true} to activate the {@link AgentCardController}, which
  * serves the card at {@code /.well-known/agent.json} so that remote orchestrators can discover
  * this agent's capabilities without prior knowledge.
  *
  * <h3>Minimal configuration</h3>
  * <pre>{@code
- * agent:
+ * relay:
  *   a2a:
  *     enabled: true
  *     name: "Order Agent"
@@ -45,7 +45,7 @@ import lombok.Data;
  * @see AgentCardController
  */
 @Data
-@ConfigurationProperties(prefix = "agent.a2a")
+@ConfigurationProperties(prefix = "relay.a2a")
 public class AgentCardProperties {
 
     /**
