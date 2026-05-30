@@ -25,7 +25,7 @@ import lombok.extern.slf4j.Slf4j;
 /**
  * Registry of configured {@link AgentClient} instances, keyed by logical agent name.
  *
- * <p>Registered as a Spring bean when {@code agent.a2a.enabled=true}. Sub-agents that
+ * <p>Registered as a Spring bean when {@code relay.a2a.enabled=true}. Sub-agents that
  * delegate to remote agents inject this registry and look up their target by name:
  *
  * <pre>{@code
@@ -39,7 +39,7 @@ import lombok.extern.slf4j.Slf4j;
  * }</pre>
  *
  * <h3>How clients are created</h3>
- * <p>At startup, {@code AgentClientRegistry} reads {@code agent.a2a.clients.*} properties
+ * <p>At startup, {@code AgentClientRegistry} reads {@code relay.a2a.clients.*} properties
  * and constructs one {@link AgentClient} per entry. All registered {@link A2AAuthContributor}
  * beans are passed to every client so each can selectively contribute headers by agent name.
  *
@@ -67,7 +67,7 @@ public class AgentClientRegistry {
     /**
      * Returns the {@link AgentClient} for the given logical agent name.
      *
-     * @param agentName the logical name configured under {@code agent.a2a.clients}
+     * @param agentName the logical name configured under {@code relay.a2a.clients}
      * @return the client
      * @throws IllegalArgumentException if no client is configured for the given name
      */
@@ -106,12 +106,12 @@ public class AgentClientRegistry {
      *
      * <p>Registers a shared {@link A2AHttpClient} singleton (overridable via
      * {@code @ConditionalOnMissingBean}) and one {@link AgentClient} per entry under
-     * {@code agent.a2a.clients}. All clients share the same {@code A2AHttpClient} and
+     * {@code relay.a2a.clients}. All clients share the same {@code A2AHttpClient} and
      * the Spring-managed {@link ObjectMapper}.
      */
     @Configuration
     @EnableConfigurationProperties(AgentClientProperties.class)
-    @ConditionalOnProperty(prefix = "agent.a2a", name = "enabled", havingValue = "true")
+    @ConditionalOnProperty(prefix = "relay.a2a", name = "enabled", havingValue = "true")
     public static class AutoConfig {
 
         /**

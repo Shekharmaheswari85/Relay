@@ -33,7 +33,7 @@ import java.util.Optional;
  * <p>When cross-pod dedup is needed, implement this interface:
  * <pre>{@code
  * @Service
- * @ConditionalOnProperty(name = "agent.tool.cache.distributed", havingValue = "true")
+ * @ConditionalOnProperty(name = "relay.tool.cache.distributed", havingValue = "true")
  * public class RedisToolDedupCache implements ToolDedupCache {
  *     private final RedisTemplate<String, byte[]> template;
  *     // ...

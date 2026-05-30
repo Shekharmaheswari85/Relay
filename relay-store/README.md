@@ -16,7 +16,7 @@ This module defines the storage SPI that the rest of Relay writes against. Swap 
 
 ```xml
 <dependency>
-    <groupId>io.relay</groupId>
+    <groupId>io.github.shekharmaheswari85</groupId>
     <artifactId>relay-store</artifactId>
 </dependency>
 ```

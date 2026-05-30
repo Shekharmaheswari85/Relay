@@ -86,7 +86,7 @@ public class BaseCreateSessionRequest {
     /**
      * Carries an LLM provider override for this session (e.g. {@code "openai"},
      * {@code "anthropic"}).  When absent, the agent uses the provider configured
-     * in {@code agent.llm.provider}.  Optional.
+     * in {@code relay.llm.provider}.  Optional.
      */
     private String provider;
 

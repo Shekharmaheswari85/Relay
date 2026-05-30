@@ -20,13 +20,13 @@ import lombok.extern.slf4j.Slf4j;
  * Serves the agent's {@link AgentCard} at the standard A2A discovery endpoint
  * {@code GET /.well-known/agent.json}.
  *
- * <p>This controller is only activated when {@code agent.a2a.enabled=true}. It allows remote
+ * <p>This controller is only activated when {@code relay.a2a.enabled=true}. It allows remote
  * agents and orchestration layers to discover this agent's identity, URL, skills, and
  * authentication requirements without any prior coordination.
  *
  * <h3>Enable via configuration</h3>
  * <pre>{@code
- * agent:
+ * relay:
  *   a2a:
  *     enabled: true
  *     name: "Order Agent"
@@ -55,7 +55,7 @@ import lombok.extern.slf4j.Slf4j;
 @RestController
 @RequiredArgsConstructor
 @EnableConfigurationProperties(AgentCardProperties.class)
-@ConditionalOnProperty(prefix = "agent.a2a", name = "enabled", havingValue = "true")
+@ConditionalOnProperty(prefix = "relay.a2a", name = "enabled", havingValue = "true")
 public class AgentCardController {
 
     private final AgentCardProperties properties;
@@ -63,7 +63,7 @@ public class AgentCardController {
     /**
      * Returns this agent's card as JSON.
      *
-     * @return the agent card, populated from {@code agent.a2a.*} configuration
+     * @return the agent card, populated from {@code relay.a2a.*} configuration
      */
     @GetMapping(value = "/.well-known/agent.json", produces = MediaType.APPLICATION_JSON_VALUE)
     public AgentCard getAgentCard() {

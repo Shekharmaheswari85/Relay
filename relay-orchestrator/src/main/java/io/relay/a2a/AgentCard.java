@@ -24,7 +24,7 @@ import lombok.extern.jackson.Jacksonized;
  *
  * <p>This follows the emerging <a href="https://google.github.io/A2A/">Google A2A protocol</a>
  * agent card schema. The {@link AgentCardController} serves this object at the well-known URL
- * when {@code agent.a2a.enabled=true}.
+ * when {@code relay.a2a.enabled=true}.
  *
  * <h3>Example card JSON</h3>
  * <pre>{@code
@@ -51,7 +51,7 @@ import lombok.extern.jackson.Jacksonized;
  *
  * <h3>Configuration</h3>
  * <pre>{@code
- * agent:
+ * relay:
  *   a2a:
  *     enabled: true
  *     name: "Order Agent"

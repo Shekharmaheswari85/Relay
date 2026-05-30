@@ -17,7 +17,7 @@ This module has no Spring AI or database dependencies. It contains only the doma
 
 ```xml
 <dependency>
-    <groupId>io.relay</groupId>
+    <groupId>io.github.shekharmaheswari85</groupId>
     <artifactId>relay-core</artifactId>
 </dependency>
 ```

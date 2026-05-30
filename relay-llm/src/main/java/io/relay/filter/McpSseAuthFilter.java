@@ -36,7 +36,7 @@ import org.springframework.stereotype.Component;
  *
  * <h3>Configuration</h3>
  * <pre>{@code
- * agent:
+ * relay:
  *   mcp:
  *     sse:
  *       enabled: true                         # set false to disable this filter entirely

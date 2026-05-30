@@ -55,7 +55,7 @@ Relay is structured as a multi-module Maven project. Import the BOM and pick exa
 <dependencyManagement>
     <dependencies>
         <dependency>
-            <groupId>io.relay</groupId>
+            <groupId>io.github.shekharmaheswari85</groupId>
             <artifactId>relay-bom</artifactId>
             <version>1.0.7-SNAPSHOT</version>
             <type>pom</type>
@@ -69,7 +69,7 @@ Relay is structured as a multi-module Maven project. Import the BOM and pick exa
 
 ```xml
 <dependency>
-    <groupId>io.relay</groupId>
+    <groupId>io.github.shekharmaheswari85</groupId>
     <artifactId>relay-orchestrator</artifactId>
 </dependency>
 ```
@@ -213,7 +213,7 @@ io.relay
 <dependencyManagement>
     <dependencies>
         <dependency>
-            <groupId>io.relay</groupId>
+            <groupId>io.github.shekharmaheswari85</groupId>
             <artifactId>relay-bom</artifactId>
             <version>1.0.7-SNAPSHOT</version>
             <type>pom</type>
@@ -224,7 +224,7 @@ io.relay
 
 <dependencies>
     <dependency>
-        <groupId>io.relay</groupId>
+        <groupId>io.github.shekharmaheswari85</groupId>
         <artifactId>relay-orchestrator</artifactId>
     </dependency>
 
@@ -352,7 +352,7 @@ Every agent interaction lives inside a **session** — a durable unit of work th
 Enable the built-in scheduler to expire idle sessions automatically (requires JPA):
 
 ```yaml
-agent:
+relay:
   session:
     expiry:
       enabled: true          # activates DefaultSessionExpiryScheduler
@@ -430,19 +430,17 @@ public RagAdvisor ragAdvisor(AgentRetriever retriever) {
 ### Tool System
 
 ```java
-@Component
+@AgentTool(category = ToolCategory.DISCOVERY)
 public class OrderTools {
 
-    @AgentTool(
-        name        = "check_order_status",
-        description = "Returns the current status for a given order ID",
-        category    = ToolCategory.QUERY)
+    @Tool(description = "Returns the current status for a given order ID")
     public OrderStatus checkOrderStatus(String orderId) { ... }
+}
 
-    @AgentTool(
-        name        = "cancel_order",
-        description = "Cancels an order — requires user confirmation",
-        category    = ToolCategory.MUTATION)
+@AgentTool(category = ToolCategory.MUTATION, requiresSession = true)
+public class OrderMutationTools {
+
+    @Tool(description = "Cancels an order on behalf of the current session user")
     public CancelResult cancelOrder(String orderId) { ... }
 }
 ```
@@ -454,7 +452,7 @@ public class OrderTools {
 Tool results can expire on a different schedule from the rest of the cache:
 
 ```yaml
-agent:
+relay:
   cache:
     ttl: 30m        # all other cache entries
     tool-ttl: 5m    # tool results expire faster (live data)
@@ -486,7 +484,7 @@ The framework synthesises a confirmation signal, re-runs the pipeline with `user
 HTTP-native protocol for multi-agent fan-out with SSE streaming.
 
 ```yaml
-agent:
+relay:
   a2a:
     enabled: true
     clients:
@@ -559,19 +557,19 @@ SSE event types emitted by the framework:
 
 | Metric                            | Type    | Tags                           |
 |-----------------------------------|---------|--------------------------------|
-| `agent.session.count`             | Counter | `event`, `agentId`             |
-| `agent.llm.calls`                 | Counter | `provider`, `model`, `outcome` |
-| `agent.llm.duration`              | Timer   | `provider`, `model`, `outcome` |
+| `relay.session.count`             | Counter | `event`, `agentId`             |
+| `relay.llm.calls`                 | Counter | `provider`, `model`, `outcome` |
+| `relay.llm.duration`              | Timer   | `provider`, `model`, `outcome` |
 | `agent.tool.calls`                | Counter | `tool`, `outcome`              |
 | `agent.tool.duration`             | Timer   | `tool`, `outcome`              |
 | `agent.handoff.count`             | Counter | `from`, `to`                   |
-| `agent.cache.operations`          | Counter | `operation`, `type`            |
+| `relay.cache.operations`          | Counter | `operation`, `type`            |
 | `agent.gate.confirmation.blocked` | Counter | —                              |
 
 #### Common tags for dashboard filtering
 
 ```yaml
-agent:
+relay:
   metrics:
     common-tags:
       service: order-agent
@@ -640,7 +638,7 @@ Built-in backends: **in-memory** (default), **JPA** (add `spring-boot-starter-da
 ## Configuration Reference
 
 ```yaml
-agent:
+relay:
 
   # ── Cache ──────────────────────────────────────────────────────────────────
   cache:
@@ -792,7 +790,7 @@ public class MySessionExpiryScheduler extends BaseSessionExpiryScheduler<MySessi
         super.onSessionExpired(session);
     }
 
-    @Scheduled(fixedDelayString = "${agent.session.expiry.check-interval-ms:3600000}")
+    @Scheduled(fixedDelayString = "${relay.session.expiry.check-interval-ms:3600000}")
     public void runExpiry() { expireInactiveSessions(); }
 }
 ```

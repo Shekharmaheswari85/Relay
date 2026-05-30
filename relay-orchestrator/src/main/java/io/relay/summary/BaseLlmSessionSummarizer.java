@@ -50,7 +50,7 @@ import lombok.extern.slf4j.Slf4j;
  *
  * <h3>Prompt configuration via YAML</h3>
  * <pre>{@code
- * agent:
+ * relay:
  *   llm:
  *     summary-prompts:
  *       onboarding-market: prompts/onboarding-summary.txt
@@ -227,9 +227,9 @@ public abstract class BaseLlmSessionSummarizer<S extends BaseAgentSession> imple
      * Returns the stable identifier of this agent, used to look up the summary system
      * prompt from {@link SummaryPromptProvider}.
      *
-     * <p>The value must match the key used in the {@code agent.llm.summary-prompts} YAML
+     * <p>The value must match the key used in the {@code relay.llm.summary-prompts} YAML
      * map (case-insensitive lookup). For example, returning {@code "onboarding-market"}
-     * resolves the prompt at {@code agent.llm.summary-prompts.onboarding-market}.
+     * resolves the prompt at {@code relay.llm.summary-prompts.onboarding-market}.
      *
      * @return the agent identifier; never null or blank
      */

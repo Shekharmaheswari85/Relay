@@ -7,7 +7,7 @@ name: Release
 #   1. Reads current version from pom.xml  (e.g. 1.0.4-SNAPSHOT)
 #   2. Strips -SNAPSHOT                    (→ 1.0.4)
 #   3. Builds & verifies (SpotBugs + PMD)
-#   4. Publishes release artifact to GitHub Packages  (skip if re-running after partial failure)
+#   4. Publishes release artifact to Maven Central  (skip if re-running after partial failure)
 #   5. Commits release version to main
 #   6. Tags  v1.0.4
 #   7. Bumps pom.xml to next SNAPSHOT      (→ 1.0.5-SNAPSHOT)
@@ -39,7 +39,6 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write   # push commits + tags, create GitHub Release
-      packages: write   # publish to GitHub Packages
 
     steps:
       - name: Checkout main
@@ -59,8 +58,11 @@ jobs:
           java-version: '21'
           distribution: 'temurin'
           cache: 'maven'
-          server-id: github
-          settings-path: ${{ github.workspace }}
+          server-id: central
+          server-username: MAVEN_USERNAME
+          server-password: MAVEN_PASSWORD
+          gpg-private-key: ${{ secrets.GPG_SECRET_KEY }}
+          gpg-passphrase: MAVEN_GPG_PASSPHRASE
 
       # ── Compute versions ────────────────────────────────────────────────
       - name: Compute release and next-SNAPSHOT versions
@@ -109,18 +111,43 @@ jobs:
         run: mvn -B verify
 
       # ── Publish artifact ─────────────────────────────────────────────────
-      - name: Publish ${{ steps.ver.outputs.release }} to GitHub Packages
+      - name: Validate publishing secrets
         if: ${{ inputs.skip_publish != true }}
         run: |
-          mvn -B deploy \
-            -DskipTests \
-            -DaltDeploymentRepository=github::default::https://maven.pkg.github.com/${{ github.repository }}
+          missing=0
+          for name in MAVEN_USERNAME MAVEN_PASSWORD MAVEN_GPG_PASSPHRASE; do
+            if [ -z "${!name}" ]; then
+              echo "::error::$name is empty. Configure OSSRH_USERNAME, OSSRH_TOKEN, and GPG_PASSPHRASE repository secrets before publishing."
+              missing=1
+            fi
+          done
+          if [ -z "${GPG_SECRET_KEY_SET}" ]; then
+            echo "::error::GPG_SECRET_KEY is empty. Configure the ASCII-armored private key as a repository secret."
+            missing=1
+          fi
+          exit "$missing"
         env:
-          GITHUB_TOKEN: ${{ secrets.GH_PACKAGES_TOKEN || github.token }}
+          MAVEN_USERNAME: ${{ secrets.OSSRH_USERNAME }}
+          MAVEN_PASSWORD: ${{ secrets.OSSRH_TOKEN }}
+          MAVEN_GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
+          GPG_SECRET_KEY_SET: ${{ secrets.GPG_SECRET_KEY }}
+
+      - name: Publish ${{ steps.ver.outputs.release }} to Maven Central
+        if: ${{ inputs.skip_publish != true }}
+        run: |
+          mvn -B clean deploy \
+            -DskipTests \
+            -Dspotbugs.skip=true \
+            -Dpmd.skip=true \
+            -P release
+        env:
+          MAVEN_USERNAME: ${{ secrets.OSSRH_USERNAME }}
+          MAVEN_PASSWORD: ${{ secrets.OSSRH_TOKEN }}
+          MAVEN_GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
 
       - name: Skip publish (artifact already published)
         if: ${{ inputs.skip_publish == true }}
-        run: echo "Skipping publish — artifact ${{ steps.ver.outputs.release }} already exists in GitHub Packages."
+        run: echo "Skipping publish — artifact ${{ steps.ver.outputs.release }} was already published."
 
       # ── Commit, tag, bump, push ──────────────────────────────────────────
       - name: Commit release, tag, bump to next SNAPSHOT, push

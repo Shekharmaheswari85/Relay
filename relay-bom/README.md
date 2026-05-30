@@ -10,7 +10,7 @@ Import this BOM into your project's `dependencyManagement` to lock all Relay mod
 <dependencyManagement>
     <dependencies>
         <dependency>
-            <groupId>io.relay</groupId>
+            <groupId>io.github.shekharmaheswari85</groupId>
             <artifactId>relay-bom</artifactId>
             <version>1.0.7-SNAPSHOT</version>
             <type>pom</type>
@@ -25,11 +25,11 @@ After importing the BOM, declare Relay modules without versions:
 ```xml
 <dependencies>
     <dependency>
-        <groupId>io.relay</groupId>
+        <groupId>io.github.shekharmaheswari85</groupId>
         <artifactId>relay-core</artifactId>
     </dependency>
     <dependency>
-        <groupId>io.relay</groupId>
+        <groupId>io.github.shekharmaheswari85</groupId>
         <artifactId>relay-llm</artifactId>
     </dependency>
     <!-- add other modules as needed -->

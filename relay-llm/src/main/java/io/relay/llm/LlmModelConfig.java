@@ -13,7 +13,7 @@ package io.relay.llm;
  * version tokens, and the strategy used to construct the completions URL path.
  *
  * <p>{@code LlmModelConfig} is the resolved form of the YAML stanzas
- * {@code agent.llm.reasoning-model} and {@code agent.llm.utility-model}. The auto-configuration
+ * {@code relay.llm.reasoning-model} and {@code relay.llm.utility-model}. The auto-configuration
  * in {@code ChatClientAutoConfiguration} reads those stanzas, builds one
  * {@code LlmModelConfig} per configured tier, and stores them in a
  * {@link ChatClientRegistry}.
@@ -93,7 +93,7 @@ public record LlmModelConfig(
      *
      * <p>Delegates to the {@link CompletionsPathStrategy} when one is set; otherwise
      * falls back to {@link LlmProvider#buildCompletionsPath(String, String, String)}.
-     * The returned value is appended to {@code agent.llm.gateway-base-url} when
+     * The returned value is appended to {@code relay.llm.gateway-base-url} when
      * constructing the full request URL.
      *
      * @return the completions path segment to append to the gateway base URL; never null

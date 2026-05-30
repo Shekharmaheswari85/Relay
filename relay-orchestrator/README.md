@@ -30,7 +30,7 @@ This is the top-level Relay module. It wires together every other module, provid
 
 ```xml
 <dependency>
-    <groupId>io.relay</groupId>
+    <groupId>io.github.shekharmaheswari85</groupId>
     <artifactId>relay-orchestrator</artifactId>
 </dependency>
 ```
@@ -41,14 +41,14 @@ This is the top-level Relay module. It wires together every other module, provid
 
 - `AgentMemoryManager` (in-memory by default)
 - `EntityMemoryStore` and `PersonaStore` (in-memory by default)
-- `AgentCache` — Caffeine (`inmemory`) or Redis (`redis`) based on `agent.cache.type`
-- `ToolResultCache` — with optional dedicated TTL from `agent.cache.tool-ttl`
+- `AgentCache` — Caffeine (`inmemory`) or Redis (`redis`) based on `relay.cache.type`
+- `ToolResultCache` — with optional dedicated TTL from `relay.cache.tool-ttl`
 - `ToolDedupCache` — local or Redis-backed
 - `RagAdvisor` — **auto-wired** when an `AgentRetriever` bean is present
-- `DefaultSessionExpiryScheduler` — **auto-wired** when `agent.session.expiry.enabled=true` and JPA is present
-- `agentCommonTagsMeterFilter` — adds `agent.metrics.common-tags` to all `agent.*` Micrometer metrics
+- `DefaultSessionExpiryScheduler` — **auto-wired** when `relay.session.expiry.enabled=true` and JPA is present
+- `agentCommonTagsMeterFilter` — adds `relay.metrics.common-tags` to all `agent.*` Micrometer metrics
 - `AgentRegistry` (scans for `AgentExecutor` beans)
-- `AgentCardController` (when `agent.a2a.enabled=true`)
+- `AgentCardController` (when `relay.a2a.enabled=true`)
 - JPA store beans (when `spring-boot-starter-data-jpa` is present and concrete repos are defined)
 
 ## Advisor Chain
@@ -169,7 +169,7 @@ public RateLimitAdvisor rateLimitAdvisor() {
 Enable the built-in scheduler to transition idle sessions to `EXPIRED`:
 
 ```yaml
-agent:
+relay:
   session:
     expiry:
       enabled: true
@@ -197,7 +197,7 @@ public class MyExpiryScheduler extends BaseSessionExpiryScheduler<MySessionDO> {
         super.onSessionExpired(session);
     }
 
-    @Scheduled(fixedDelayString = "${agent.session.expiry.check-interval-ms:3600000}")
+    @Scheduled(fixedDelayString = "${relay.session.expiry.check-interval-ms:3600000}")
     public void runExpiry() { expireInactiveSessions(); }
 }
 ```
@@ -248,7 +248,7 @@ If the same key appears multiple times, the later layer overrides the earlier va
 HTTP-native protocol for multi-agent fan-out with SSE and JSON support.
 
 ```yaml
-agent:
+relay:
   a2a:
     enabled: true
     connect-timeout: 10s

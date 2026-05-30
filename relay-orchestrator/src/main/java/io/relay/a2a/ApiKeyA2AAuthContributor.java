@@ -63,7 +63,7 @@ public final class ApiKeyA2AAuthContributor implements A2AAuthContributor {
      * only for calls to {@code agentName}.
      *
      * @param agentName  the logical agent name (must match the key in
-     *                   {@code agent.a2a.clients}); must not be blank
+     *                   {@code relay.a2a.clients}); must not be blank
      * @param headerName the HTTP header to set (e.g., {@code "X-Api-Key"}); must not be blank
      * @param apiKey     the API key value; must not be blank
      */

@@ -126,7 +126,7 @@ public class ChatClientRegistry {
 
     /**
      * Returns the {@link ChatClient} for the default provider as declared in
-     * {@code agent.llm.default-provider}.
+     * {@code relay.llm.default-provider}.
      *
      * @return the default provider's {@code ChatClient}; never null
      * @throws IllegalArgumentException if the default provider has no registered client

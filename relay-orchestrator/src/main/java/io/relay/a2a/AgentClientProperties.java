@@ -18,13 +18,13 @@ import lombok.Data;
 /**
  * Configuration properties for outbound A2A (Agent-to-Agent) client connections.
  *
- * <p>Each entry under {@code agent.a2a.clients} defines a named remote agent that this
+ * <p>Each entry under {@code relay.a2a.clients} defines a named remote agent that this
  * agent can call. The logical name (map key) is passed to {@link A2AAuthContributor} beans
  * so they can apply the correct credentials per target.
  *
  * <h3>Configuration</h3>
  * <pre>{@code
- * agent:
+ * relay:
  *   a2a:
  *     clients:
  *       inventory-agent:
@@ -45,7 +45,7 @@ import lombok.Data;
  * @see A2AAuthContributor
  */
 @Data
-@ConfigurationProperties(prefix = "agent.a2a")
+@ConfigurationProperties(prefix = "relay.a2a")
 public class AgentClientProperties {
 
     /**

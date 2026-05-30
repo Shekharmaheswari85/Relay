@@ -19,20 +19,20 @@ import lombok.extern.slf4j.Slf4j;
 
 /**
  * Framework-provided concrete session expiry scheduler that activates automatically
- * when {@code agent.session.expiry.enabled=true} and
+ * when {@code relay.session.expiry.enabled=true} and
  * {@code spring-boot-starter-data-jpa} is on the classpath.
  *
  * <p>Expires {@link SessionStatus#ACTIVE} and {@link SessionStatus#PAUSED} sessions
- * that have not been updated for longer than {@code agent.session.expiry.idle-hours}
+ * that have not been updated for longer than {@code relay.session.expiry.idle-hours}
  * (default: 24 hours). Expired sessions are transitioned to
  * {@link SessionStatus#EXPIRED} and saved back to the repository.
  *
  * <p>The check interval defaults to 1 hour and is configurable via
- * {@code agent.session.expiry.check-interval-ms}.
+ * {@code relay.session.expiry.check-interval-ms}.
  *
  * <h3>Configuration</h3>
  * <pre>{@code
- * agent:
+ * relay:
  *   session:
  *     expiry:
  *       enabled: true
@@ -57,7 +57,7 @@ import lombok.extern.slf4j.Slf4j;
  *
  *     @Override protected String getExpiredStatus() { return "EXPIRED"; }
  *
- *     @Scheduled(fixedDelayString = "${agent.session.expiry.check-interval-ms:3600000}")
+ *     @Scheduled(fixedDelayString = "${relay.session.expiry.check-interval-ms:3600000}")
  *     public void runExpiry() { expireInactiveSessions(); }
  * }
  * }</pre>
@@ -80,7 +80,7 @@ public class DefaultSessionExpiryScheduler extends BaseSessionExpiryScheduler<Ba
      *
      * @param repository the session repository to query and persist expiry state
      * @param idleHours  the number of inactive hours before a session is expired;
-     *                   sourced from {@code agent.session.expiry.idle-hours}
+     *                   sourced from {@code relay.session.expiry.idle-hours}
      */
     @SuppressWarnings("unchecked")
     public DefaultSessionExpiryScheduler(
@@ -94,11 +94,11 @@ public class DefaultSessionExpiryScheduler extends BaseSessionExpiryScheduler<Ba
     /**
      * Scheduled trigger that invokes the expiry sweep.
      *
-     * <p>Runs at the interval defined by {@code agent.session.expiry.check-interval-ms}
+     * <p>Runs at the interval defined by {@code relay.session.expiry.check-interval-ms}
      * (default: 3,600,000 ms = 1 hour). The delay is measured from the completion of
      * the previous run, so a slow sweep never causes overlapping executions.
      */
-    @Scheduled(fixedDelayString = "${agent.session.expiry.check-interval-ms:3600000}")
+    @Scheduled(fixedDelayString = "${relay.session.expiry.check-interval-ms:3600000}")
     public void runExpiry() {
         expireInactiveSessions();
     }
