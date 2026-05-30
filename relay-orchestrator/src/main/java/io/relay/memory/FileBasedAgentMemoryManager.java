@@ -122,12 +122,7 @@ public class FileBasedAgentMemoryManager implements AgentMemoryManager {
         if (entries.isEmpty()) {
             return "";
         }
-        StringBuilder sb = new StringBuilder("\n[AGENT MEMORY]\n");
-        for (MemoryEntry e : entries) {
-            sb.append(e.type().name()).append(": ").append(e.content()).append("\n");
-        }
-        sb.append("[END AGENT MEMORY]\n");
-        return sb.toString();
+        return MemoryContextUtil.assembleMemoryContext(entries);
     }
 
     @Override

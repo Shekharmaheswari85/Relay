@@ -61,7 +61,7 @@ public class VerificationStep implements ReasoningStep {
 
         String response = chatClient.prompt()
                 .system(SYSTEM_PROMPT)
-                .user(Objects.requireNonNull(String.format("Problem: %s\n\nExecution Draft:\n%s\n\nVerify this draft:", originalProblem, execution), "User prompt must not be null"))
+                .user(Objects.requireNonNull(String.format("Problem: %s%n%nExecution Draft:%n%s%n%nVerify this draft:%n", originalProblem, execution), "User prompt must not be null"))
                 .call()
                 .content();
 

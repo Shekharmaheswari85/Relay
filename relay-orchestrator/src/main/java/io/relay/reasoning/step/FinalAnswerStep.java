@@ -58,17 +58,7 @@ public class FinalAnswerStep implements ReasoningStep {
                     false, Duration.ZERO);
         }
 
-        String userQuery = String.format("""
-                Problem: %s
-
-                Solution execution:
-                %s
-
-                Verification report:
-                %s
-
-                Formulate the final response:
-                """, originalProblem, execution, verification != null ? verification : "N/A");
+        String userQuery = String.format("%nProblem: %s%n%nSolution execution:%n%s%n%nVerification report:%n%s%n%nFormulate the final response:%n", originalProblem, execution, verification != null ? verification : "N/A");
 
         String response = chatClient.prompt()
                 .system(SYSTEM_PROMPT)

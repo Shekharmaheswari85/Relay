@@ -16,21 +16,31 @@ import java.util.concurrent.ConcurrentHashMap;
 import lombok.extern.slf4j.Slf4j;
 
 /**
- * In-memory implementation of {@link AgentMemoryManager} backed by a {@link ConcurrentHashMap}.
+ * In-memory implementation of {@link AgentMemoryManager} backed by a
+ * {@link ConcurrentHashMap}.
  *
- * <p>Entries are indexed under two key schemes:
+ * <p>
+ * Entries are indexed under two key schemes:
  * <ul>
- *   <li>{@code SESSION:<TYPE>:<sessionId>} — for session-scoped entries</li>
- *   <li>{@code USER:<TYPE>:<userId>} — for user-scoped entries</li>
+ * <li>{@code SESSION:<TYPE>:<sessionId>} — for session-scoped entries</li>
+ * <li>{@code USER:<TYPE>:<userId>} — for user-scoped entries</li>
  * </ul>
  *
- * <p>Recall uses simple case-insensitive keyword matching: a query is tokenised on whitespace
- * and an entry matches if any token longer than three characters appears in the entry's content.
- * When {@code query} is blank or {@code null}, all entries in scope are returned.
+ * <p>
+ * Recall uses simple case-insensitive keyword matching: a query is tokenised on
+ * whitespace
+ * and an entry matches if any token longer than three characters appears in the
+ * entry's content.
+ * When {@code query} is blank or {@code null}, all entries in scope are
+ * returned.
  *
- * <p>This implementation is thread-safe for concurrent reads and writes within a single JVM.
- * It is suitable for development and single-instance deployments. For production, replace it
- * with a vector-store-backed implementation registered as a {@code @Bean} of type
+ * <p>
+ * This implementation is thread-safe for concurrent reads and writes within a
+ * single JVM.
+ * It is suitable for development and single-instance deployments. For
+ * production, replace it
+ * with a vector-store-backed implementation registered as a {@code @Bean} of
+ * type
  * {@link AgentMemoryManager}.
  *
  * @see AgentMemoryManager
@@ -45,7 +55,8 @@ public class InMemoryAgentMemoryManager implements AgentMemoryManager {
     private final Map<String, List<MemoryEntry>> store = new ConcurrentHashMap<>();
 
     /**
-     * Writes a memory entry into the store under the session key, user key, or both,
+     * Writes a memory entry into the store under the session key, user key, or
+     * both,
      * depending on which identifiers are non-null on the entry.
      *
      * @param entry the memory entry to persist; never {@code null}
@@ -63,21 +74,25 @@ public class InMemoryAgentMemoryManager implements AgentMemoryManager {
     }
 
     /**
-     * Retrieves memory entries of the given type that match the query, limited to {@code topK}
-     * results. Entries from both the session index and the user index are merged with
-     * deduplication (an entry already found under the session key is not added again from
+     * Retrieves memory entries of the given type that match the query, limited to
+     * {@code topK}
+     * results. Entries from both the session index and the user index are merged
+     * with
+     * deduplication (an entry already found under the session key is not added
+     * again from
      * the user key).
      *
      * @param sessionId the session to scope recall to; may be {@code null}
      * @param userId    the user to scope recall to; may be {@code null}
      * @param type      the memory type to retrieve; never {@code null}
-     * @param query     the keyword query for matching; may be {@code null} to return all entries
+     * @param query     the keyword query for matching; may be {@code null} to
+     *                  return all entries
      * @param topK      the maximum number of entries to return; must be positive
      * @return a non-null, possibly empty list of matching entries
      */
     @Override
     public List<MemoryEntry> recall(final String sessionId, final String userId, final MemoryType type,
-                                     final String query, final int topK) {
+            final String query, final int topK) {
         List<MemoryEntry> candidates = new ArrayList<>();
         if (sessionId != null) {
             candidates.addAll(store.getOrDefault(sessionKey(type, sessionId), List.of()));
@@ -94,10 +109,14 @@ public class InMemoryAgentMemoryManager implements AgentMemoryManager {
     }
 
     /**
-     * Assembles a formatted {@code [AGENT MEMORY]} block from all context-relevant memories
-     * for the given session and user. Returns an empty string when no memories are found.
+     * Assembles a formatted {@code [AGENT MEMORY]} block from all context-relevant
+     * memories
+     * for the given session and user. Returns an empty string when no memories are
+     * found.
      *
-     * <p>The format is:
+     * <p>
+     * The format is:
+     * 
      * <pre>
      * [AGENT MEMORY]
      * ENTITY: Product sku-123 is out of stock in SE region
@@ -117,12 +136,7 @@ public class InMemoryAgentMemoryManager implements AgentMemoryManager {
         if (entries.isEmpty()) {
             return "";
         }
-        StringBuilder sb = new StringBuilder("\n[AGENT MEMORY]\n");
-        for (MemoryEntry e : entries) {
-            sb.append(e.type().name()).append(": ").append(e.content()).append("\n");
-        }
-        sb.append("[END AGENT MEMORY]\n");
-        return sb.toString();
+        return MemoryContextUtil.assembleMemoryContext(entries);
     }
 
     /**
@@ -139,7 +153,8 @@ public class InMemoryAgentMemoryManager implements AgentMemoryManager {
     }
 
     /**
-     * Removes all memory entries for the given session across every {@link MemoryType}.
+     * Removes all memory entries for the given session across every
+     * {@link MemoryType}.
      *
      * @param sessionId the session to wipe; never {@code null}
      */
@@ -153,7 +168,8 @@ public class InMemoryAgentMemoryManager implements AgentMemoryManager {
     }
 
     /**
-     * Removes all user-scoped memory entries of the given type for the specified user.
+     * Removes all user-scoped memory entries of the given type for the specified
+     * user.
      *
      * @param userId the user whose memories to clear; never {@code null}
      * @param type   the memory type to clear; never {@code null}

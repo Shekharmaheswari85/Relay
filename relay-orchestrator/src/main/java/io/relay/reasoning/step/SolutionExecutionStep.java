@@ -54,7 +54,7 @@ public class SolutionExecutionStep implements ReasoningStep {
 
         String response = chatClient.prompt()
                 .system(SYSTEM_PROMPT)
-                .user(Objects.requireNonNull(String.format("Problem: %s\n\nPlan: %s\n\nExecute the plan step-by-step:", originalProblem, plan), "User prompt must not be null"))
+                .user(Objects.requireNonNull(String.format("Problem: %s%n%nPlan: %s%n%nExecute the plan step-by-step:%n", originalProblem, plan), "User prompt must not be null"))
                 .call()
                 .content();
 
