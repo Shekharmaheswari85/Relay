@@ -68,7 +68,16 @@ public class ThinkingStreamParser {
      * Add this to the beginning of your agent's system prompt.
      */
     public static final String THINKING_INSTRUCTION = """
-            Before answering, enclose your step-by-step reasoning inside <think>...</think> tags. Think through: what the user is asking, what context you have, and the best way to respond. Your final answer to the user goes after the closing </think> tag.
+            Before answering, enclose your step-by-step reasoning inside <think>...</think> tags.
+            Inside the <think> tag, you MUST start by outlining your execution plan/phases clearly. Specifically, list the nodes, agents, or tools you will activate and the order of execution.
+            For example:
+            1. [Phase 1: Planning] Analyzing user requirements
+            2. [Phase 2: Activation] Delegating control to CoderAgent
+            3. [Phase 3: Code Generation] Invoking Filesystem MCP Tool to write the file
+            4. [Phase 4: Completion] Finalizing execution and returning result
+            
+            This allows the visual engine to map and glow the corresponding node on the screen dynamically.
+            Your final answer to the user goes after the closing </think> tag.
 
             """;
 
@@ -79,6 +88,7 @@ public class ThinkingStreamParser {
     private enum State { AWAITING, THINKING, ANSWERING }
 
     private State state = State.AWAITING;
+    private boolean inCodeBlock = false;
 
     /**
      * Lookahead buffer — accumulates characters when we suspect we might be inside
@@ -91,6 +101,12 @@ public class ThinkingStreamParser {
      * a natural emit boundary (punctuation, newline, or max length) is reached.
      */
     private final StringBuilder answerBuffer = new StringBuilder(256);
+
+    /**
+     * Buffer to accumulate thinking chunks so we can stream them cleanly line-by-line
+     * (or flush them as a single block) instead of flooding the FE with token-by-token JSON.
+     */
+    private final StringBuilder thinkingBuffer = new StringBuilder(1024);
 
     private static final int MAX_ANSWER_CHUNK = 240;
 
@@ -124,6 +140,14 @@ public class ThinkingStreamParser {
      * @param emitter the pipeline emitter to write to
      */
     public void flush(final PipelineEmitter emitter) {
+        // Flush any remaining thinking block
+        if (thinkingBuffer.length() > 0) {
+            String leftOver = thinkingBuffer.toString().trim();
+            if (!leftOver.isEmpty()) {
+                emitter.sendThinking(leftOver);
+            }
+            thinkingBuffer.setLength(0);
+        }
         // Flush any partial tag buffer as answer text (tag never closed)
         if (!tagBuffer.isEmpty()) {
             String pending = tagBuffer.toString();
@@ -132,8 +156,13 @@ public class ThinkingStreamParser {
         }
         // Flush remaining answer buffer
         if (!answerBuffer.isEmpty()) {
-            emitter.sendMessage(answerBuffer.toString());
+            String remaining = answerBuffer.toString();
             answerBuffer.setLength(0);
+            if (inCodeBlock) {
+                emitter.sendCodeBlock(remaining);
+            } else {
+                emitter.sendMessage(remaining);
+            }
         }
     }
 
@@ -142,8 +171,10 @@ public class ThinkingStreamParser {
      */
     public void reset() {
         state = State.AWAITING;
+        inCodeBlock = false;
         tagBuffer.setLength(0);
         answerBuffer.setLength(0);
+        thinkingBuffer.setLength(0);
     }
 
     /**
@@ -165,6 +196,12 @@ public class ThinkingStreamParser {
     }
 
     private void processAwaiting(final char c, final PipelineEmitter emitter) {
+        if (tagBuffer.isEmpty() && Character.isWhitespace(c)) {
+            // Keep state as AWAITING, but feed leading whitespace to answer
+            feedToAnswer(String.valueOf(c), emitter);
+            return;
+        }
+
         tagBuffer.append(c);
 
         if (OPEN_TAG.startsWith(tagBuffer.toString())) {
@@ -194,6 +231,13 @@ public class ThinkingStreamParser {
                 tagBuffer.setLength(0);
                 state = State.ANSWERING;
                 log.debug("ThinkingStreamParser: entering ANSWERING state");
+                if (thinkingBuffer.length() > 0) {
+                    String finalThinking = thinkingBuffer.toString().trim();
+                    if (!finalThinking.isEmpty()) {
+                        emitter.sendThinking(finalThinking);
+                    }
+                    thinkingBuffer.setLength(0);
+                }
             }
             // else keep accumulating partial close-tag
         } else {
@@ -207,10 +251,29 @@ public class ThinkingStreamParser {
     private void processAnswering(final char c, final PipelineEmitter emitter) {
         answerBuffer.append(c);
 
-        // Emit on natural boundaries or max length
-        if (isAnswerBoundary(c) || answerBuffer.length() >= MAX_ANSWER_CHUNK) {
-            emitter.sendMessage(answerBuffer.toString());
+        if (isAnswerBoundary(c)) {
+            String line = answerBuffer.toString();
             answerBuffer.setLength(0);
+
+            String trimmed = line.trim();
+            if (trimmed.startsWith("```")) {
+                inCodeBlock = !inCodeBlock;
+                emitter.sendCodeBlock(line);
+            } else {
+                if (inCodeBlock) {
+                    emitter.sendCodeBlock(line);
+                } else {
+                    emitter.sendMessage(line);
+                }
+            }
+        } else if (answerBuffer.length() >= MAX_ANSWER_CHUNK) {
+            String content = answerBuffer.toString();
+            answerBuffer.setLength(0);
+            if (inCodeBlock) {
+                emitter.sendCodeBlock(content);
+            } else {
+                emitter.sendMessage(content);
+            }
         }
     }
 
@@ -224,15 +287,30 @@ public class ThinkingStreamParser {
 
     private void emitThinkingChunk(final String content, final PipelineEmitter emitter) {
         if (content.isEmpty()) return;
-        String escaped = content
-                .replace("\\", "\\\\")
-                .replace("\"", "\\\"")
-                .replace("\n", "\\n")
-                .replace("\r", "\\r");
-        emitter.sendThinking("{\"phase\":\"reasoning\",\"content\":\"" + escaped + "\"}");
+        thinkingBuffer.append(content);
+
+        // Stream thinking line-by-line: flushes full lines so we get clean,
+        // readable real-time thinking badges without token-by-token character spam!
+        int newlineIdx = thinkingBuffer.lastIndexOf("\n");
+        if (newlineIdx >= 0) {
+            String readyText = thinkingBuffer.substring(0, newlineIdx);
+            thinkingBuffer.delete(0, newlineIdx + 1);
+            
+            String[] lines = readyText.split("\n", -1);
+            for (String line : lines) {
+                String clean = line.trim();
+                if (!clean.isEmpty()) {
+                    emitter.sendThinking(clean);
+                }
+            }
+        }
     }
 
     private boolean isAnswerBoundary(final char c) {
-        return c == '\n' || c == '.' || c == '!' || c == '?' || c == ';';
+        // Crucial fix: Only split on newlines ('\n'). Do not split on '.', '!', or ';'
+        // as they are highly common inside programming statements (e.g., "this.left = null;", "i++").
+        // This stops the parser from breaking statements into small chunks, preventing
+        // the client-side '+ " "' suffix from injecting syntax-breaking spaces!
+        return c == '\n';
     }
 }

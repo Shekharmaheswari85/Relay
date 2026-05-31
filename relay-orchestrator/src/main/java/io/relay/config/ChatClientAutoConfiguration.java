@@ -199,6 +199,7 @@ public class ChatClientAutoConfiguration {
         return new ChatClientRegistry(providerClients, reasoningClient, utilityClient, defaultProvider);
     }
 
+    @SuppressWarnings("removal")
     private ChatClient buildFailoverChatClient(
             final String baseUrl,
             final String apiKey,
@@ -234,7 +235,7 @@ public class ChatClientAutoConfiguration {
         }
 
         if (tools != null) {
-            builder.defaultTools((Object[]) tools.getToolCallbacks());
+            builder.defaultToolCallbacks(tools.getToolCallbacks());
         }
 
         if (advisors != null && !advisors.isEmpty()) {
@@ -244,6 +245,7 @@ public class ChatClientAutoConfiguration {
         return builder.build();
     }
 
+    @SuppressWarnings("removal")
     private ChatClient buildChatClient(
             final String baseUrl,
             final String apiKey,
@@ -268,7 +270,7 @@ public class ChatClientAutoConfiguration {
         }
 
         if (tools != null) {
-            builder.defaultTools((Object[]) tools.getToolCallbacks());
+            builder.defaultToolCallbacks(tools.getToolCallbacks());
         }
 
         if (advisors != null && !advisors.isEmpty()) {

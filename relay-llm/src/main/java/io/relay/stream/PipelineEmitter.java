@@ -74,6 +74,25 @@ public class PipelineEmitter {
         this.sessionId = sessionId;
     }
 
+    private volatile String currentProvider = "openai";
+    private volatile String currentModel = "gpt-4o-mini";
+
+    public void setCurrentProvider(String provider) {
+        this.currentProvider = provider != null ? provider : "openai";
+    }
+
+    public void setCurrentModel(String model) {
+        this.currentModel = model != null ? model : "gpt-4o-mini";
+    }
+
+    public String getCurrentProvider() {
+        return this.currentProvider;
+    }
+
+    public String getCurrentModel() {
+        return this.currentModel;
+    }
+
     // ─── Typed event senders ──────────────────────────────────────────────────
 
     /**
@@ -82,7 +101,23 @@ public class PipelineEmitter {
      * @param json the event payload; should be a JSON object string
      */
     public void sendThinking(final String json) {
-        send("thinking", json);
+        String payload = json;
+        try {
+            if (json != null) {
+                String trimmed = json.trim();
+                if (trimmed.startsWith("{")) {
+                    String inner = trimmed.substring(1, trimmed.length() - 1);
+                    payload = String.format("{\"provider\":\"%s\",\"model\":\"%s\",%s}",
+                            escape(currentProvider), escape(currentModel), inner);
+                } else {
+                    payload = String.format("{\"message\":\"%s\",\"provider\":\"%s\",\"model\":\"%s\"}",
+                            escape(json), escape(currentProvider), escape(currentModel));
+                }
+            }
+        } catch (Exception e) {
+            // fallback
+        }
+        send("thinking", payload);
     }
 
     /**
@@ -92,7 +127,22 @@ public class PipelineEmitter {
      */
     public void sendMessage(final String chunk) {
         if (chunk != null && !chunk.isEmpty()) {
-            send("message", chunk);
+            String payload = String.format("{\"text\":\"%s\",\"provider\":\"%s\",\"model\":\"%s\"}",
+                    escape(chunk), escape(currentProvider), escape(currentModel));
+            send("message", payload);
+        }
+    }
+
+    /**
+     * Emits a {@code code_block} event carrying a chunk of code.
+     *
+     * @param code the code chunk
+     */
+    public void sendCodeBlock(final String code) {
+        if (code != null && !code.isEmpty()) {
+            String payload = String.format("{\"code\":\"%s\",\"provider\":\"%s\",\"model\":\"%s\"}",
+                    escape(code), escape(currentProvider), escape(currentModel));
+            send("code_block", payload);
         }
     }
 
@@ -157,6 +207,23 @@ public class PipelineEmitter {
     public void sendAgentHandoff(final String toAgent, final String reason) {
         send("agent_handoff",
                 "{\"toAgent\":\"" + escape(toAgent) + "\",\"reason\":\"" + escape(reason) + "\"}");
+    }
+
+    /**
+     * Emits an {@code agent_handoff} event carrying target agent name, handoff reason,
+     * along with provider and model metadata.
+     *
+     * @param toAgent  the name of the target agent
+     * @param reason   a brief human-readable reason
+     * @param provider the active LLM provider
+     * @param model    the active LLM model coordinates
+     */
+    public void sendAgentHandoff(final String toAgent, final String reason, final String provider, final String model) {
+        send("agent_handoff",
+                "{\"toAgent\":\"" + escape(toAgent) 
+                + "\",\"reason\":\"" + escape(reason) 
+                + "\",\"provider\":\"" + escape(provider) 
+                + "\",\"model\":\"" + escape(model) + "\"}");
     }
 
     /**

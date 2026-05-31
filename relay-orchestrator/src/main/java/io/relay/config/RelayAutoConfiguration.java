@@ -73,9 +73,11 @@ import io.relay.store.JpaAgentSessionStore;
 import io.relay.store.JpaToolResultCacheStore;
 import io.relay.store.ToolResultCacheStore;
 import io.relay.stream.SseStreamHandler;
+import io.relay.stream.ThinkingStreamParser;
 import io.relay.stream.ToolProgressPublisher;
 import io.relay.summary.DefaultSummaryPromptProvider;
 import io.relay.thread.VirtualThreadTaskExecutorUtil;
+import io.relay.advisor.ThinkingAdvisor;
 import io.relay.tool.DefaultToolTierRegistry;
 import io.relay.tool.ToolExecutionSupport;
 import io.relay.tool.ToolTierRegistry;
@@ -251,6 +253,29 @@ public class RelayAutoConfiguration {
     @ConditionalOnMissingBean(ToolTierRegistry.class)
     public ToolTierRegistry toolTierRegistry(final ApplicationContext applicationContext) {
         return new DefaultToolTierRegistry(applicationContext);
+    }
+ 
+    /**
+     * Default thinking advisor that surfaces the agent's internal reasoning chain-of-thought.
+     *
+     * @param progressPublisher the telemetry publisher used to emit thinking events
+     * @return a new {@link ThinkingAdvisor}
+     */
+    @Bean
+    @ConditionalOnMissingBean(ThinkingAdvisor.class)
+    public ThinkingAdvisor thinkingAdvisor(final ToolProgressPublisher progressPublisher) {
+        return ThinkingAdvisor.builder(progressPublisher).build();
+    }
+ 
+    /**
+     * Default thinking stream parser for splitting reasoning blocks.
+     *
+     * @return a new {@link ThinkingStreamParser}
+     */
+    @Bean
+    @ConditionalOnMissingBean(ThinkingStreamParser.class)
+    public ThinkingStreamParser thinkingStreamParser() {
+        return new ThinkingStreamParser();
     }
 
     // ─── Memory Beans ─────────────────────────────────────────────────────────
